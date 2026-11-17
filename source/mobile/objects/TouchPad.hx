@@ -85,28 +85,36 @@ class TouchPad extends MobileInputManager implements IMobileControls
 		if (DPad != "NONE")
 		{
 			if (!MobileData.dpadModes.exists(DPad))
-				throw Language.getPhrase('touchpad_dpadmode_missing', 'The touchPad dpadMode "{1}" doesn\'t exist.', [DPad]);
-
-			for (buttonData in MobileData.dpadModes.get(DPad).buttons)
 			{
-				Reflect.setField(this, buttonData.button,
-					createButton(buttonData.x, buttonData.y, buttonData.graphic, CoolUtil.colorFromString(buttonData.color),
-						Reflect.getProperty(this, buttonData.button).IDs));
-				add(Reflect.field(this, buttonData.button));
+				trace('WARNING: The touchPad dpadMode "$DPad" doesn\'t exist.');
+			}
+			else
+			{
+				for (buttonData in MobileData.dpadModes.get(DPad).buttons)
+				{
+					Reflect.setField(this, buttonData.button,
+						createButton(buttonData.x, buttonData.y, buttonData.graphic, CoolUtil.colorFromString(buttonData.color),
+							Reflect.getProperty(this, buttonData.button).IDs));
+					add(Reflect.field(this, buttonData.button));
+				}
 			}
 		}
 
 		if (Action != "NONE")
 		{
 			if (!MobileData.actionModes.exists(Action))
-				throw Language.getPhrase('touchpad_actionmode_missing', 'The touchPad actionMode "{1}" doesn\'t exist.', [DPad]);
-
-			for (buttonData in MobileData.actionModes.get(Action).buttons)
 			{
-				Reflect.setField(this, buttonData.button,
-					createButton(buttonData.x, buttonData.y, buttonData.graphic, CoolUtil.colorFromString(buttonData.color),
-						Reflect.getProperty(this, buttonData.button).IDs));
-				add(Reflect.field(this, buttonData.button));
+				trace('WARNING: The touchPad actionMode "$Action" doesn\'t exist.');
+			}
+			else
+			{
+				for (buttonData in MobileData.actionModes.get(Action).buttons)
+				{
+					Reflect.setField(this, buttonData.button,
+						createButton(buttonData.x, buttonData.y, buttonData.graphic, CoolUtil.colorFromString(buttonData.color),
+							Reflect.getProperty(this, buttonData.button).IDs));
+					add(Reflect.field(this, buttonData.button));
+				}
 			}
 		}
 
@@ -173,11 +181,14 @@ class TouchPad extends MobileInputManager implements IMobileControls
 			var field = Reflect.field(this, button);
 			if (button.toLowerCase().contains('extra') && Std.isOfType(field, TouchButton))
 			{
-				if (MobileData.save.data.extraData.length > int)
+				if (MobileData.save.data.extraData.length <= int)
 					setExtrasDefaultPos();
 				var point = MobileData.save.data.extraData[int];
-				field.x = point.x;
-				field.y = point.y;
+				if (point != null)
+				{
+					field.x = point.x;
+					field.y = point.y;
+				}
 				int++;
 			}
 		}
