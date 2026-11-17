@@ -36,9 +36,20 @@ jobs:
       - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y g++-multilib gcc-multilib
-          chmod +x setup/*.sh
-          ./setup/setup-unix.sh
+          sudo apt-get install -y g++-multilib gcc-multilib libgl1-mesa-dev libglu1-mesa-dev
+          mkdir -p ~/haxelib && haxelib setup ~/haxelib
+          if [ -f "setup/unix.sh" ]; then
+            chmod +x setup/unix.sh
+            ./setup/unix.sh
+          elif [ -f "setup/setup-unix.sh" ]; then
+            chmod +x setup/setup-unix.sh
+            ./setup/setup-unix.sh
+          elif [ -f "hmm.json" ]; then
+            haxelib install hmm
+            haxelib run hmm install
+          else
+            ls -la setup/
+          fi
 
       - name: Build Android APK
         run: |
