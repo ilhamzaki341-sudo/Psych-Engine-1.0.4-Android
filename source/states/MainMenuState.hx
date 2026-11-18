@@ -22,6 +22,8 @@ class MainMenuState extends MusicBeatState
 	var menuItems:FlxTypedGroup<FlxSprite>;
 	var leftItem:FlxSprite;
 	var rightItem:FlxSprite;
+    var greenMenu:FlxSprite;
+    var redMenu:FlxSprite
 
 	//Centered/Text options
 	var optionShit:Array<String> = [
