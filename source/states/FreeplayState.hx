@@ -113,10 +113,10 @@ class FreeplayState extends MusicBeatState
 		add(bg);
 		bg.screenCenter();
 		
-		songFrame = new FlxSprite(-10, -10);
+		songFrame = new FlxSprite(0, 0);
         songFrame.antialiasing = ClientPrefs.data.antialiasing;
         add(songFrame);
-        songFrame.alpha = 0.0;
+        songFrame.alpha = 1.0;
 		
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
@@ -551,10 +551,12 @@ class FreeplayState extends MusicBeatState
             imagePath = 'freeplay/default';
         }
 
-       songFrame.loadGraphic(Paths.image(imagePath));
-       songFrame.setGraphicSize(Std.int(songFrame.width * 1.05));
-       songFrame.updateHitbox();
+        songFrame.loadGraphic(Paths.image(imagePath));
+        songFrame.setGraphicSize(500);
+        songFrame.updateHitbox();
 		
+        songFrame.x = FlxG.width - songFrame.width - 20;
+        songFrame.y = (FlxG.height - songFrame.height) / 2;
 		for (num => item in grpSongs.members)
 		{
 			var icon:HealthIcon = iconArray[num];
