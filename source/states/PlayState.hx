@@ -112,6 +112,11 @@ class PlayState extends MusicBeatState
 	public var songSpeed(default, set):Float = 1;
 	public var songSpeedType:String = "multiplicative";
 	public var noteKillOffset:Float = 350;
+	
+	#if mobile
+	public var tauntButton:FlxSprite; 
+    #end
+	
 
 	public var playbackRate(default, set):Float = 1;
 
@@ -516,7 +521,18 @@ class PlayState extends MusicBeatState
 		timeBar.visible = showTime;
 		uiGroup.add(timeBar);
 		uiGroup.add(timeTxt);
-
+		
+        #if mobile
+        tauntButton = new FlxSprite(0, 20).loadGraphic(Paths.image('mobile/tauntButton'));
+        tauntButton.setGraphicSize(100, 100);
+		tauntButton.updateHitbox();
+        tauntButton.x = FlxG.width - tauntButton.width - 25;
+        tauntButton.antialiasing = ClientPrefs.data.antialiasing;
+        tauntButton.scrollFactor.set(0, 0);
+        tauntButton.alpha = 1;
+        add(tauntButton);
+        #end
+	
 		noteGroup.add(strumLineNotes);
 
 		if(ClientPrefs.data.timeBarType == 'Song Name')
@@ -1440,7 +1456,7 @@ class PlayState extends MusicBeatState
 				var holdLength: Float = songNotes[2];
 				var noteType: String = !Std.isOfType(songNotes[3], String) ? Note.defaultNoteTypes[songNotes[3]] : songNotes[3];
 				if (Math.isNaN(holdLength))
-					holdLength = 0.0;
+					holdLength = 0.2;
 
 				var gottaHitNote:Bool = (songNotes[1] < totalColumns);
 
@@ -1790,7 +1806,46 @@ class PlayState extends MusicBeatState
 			botplaySine += 180 * elapsed;
 			botplayTxt.alpha = 1 - Math.sin((Math.PI * botplaySine) / 180);
 		}
+		
+		var pressedTaunt:Bool = controls.NOTE_TAUNT_P;
+		var releasedTaunt:Bool = controls.NOTE_TAUNT_R;
 
+		#if mobile
+		if (tauntButton != null && tauntButton.alpha > 0)
+		{
+			if (TouchUtil.overlaps(tauntButton) && TouchUtil.justPressed)
+			{
+				pressedTaunt = true;
+				tauntButton.alpha = 1.0;
+				tauntButton.scale.set(0.95, 0.95);
+			}
+			else if (TouchUtil.released)
+			{
+				releasedTaunt = true;
+				tauntButton.alpha = 0.7;
+				tauntButton.setGraphicSize(100, 100);
+			}
+		}
+		#end
+
+		if (!inCutscene && !cpuControlled)
+		{
+			var focusPlayer:Character = (focusPlayer ?? boyfriend);
+
+			if (pressedTaunt && focusPlayer.canTaunt && focusPlayer.hasAnim('hey'))
+			{
+				focusPlayer.playAnim('hey', true);
+				focusPlayer.specialAnim = focusPlayer.holding = true;
+				FlxG.sound.play(Paths.sound('hey'), 0.8);
+			}
+			else if (releasedTaunt && focusPlayer.holding && focusPlayer.animation.curAnim != null && focusPlayer.animation.curAnim.name == 'hey')
+			{
+				focusPlayer.holding = false;
+				focusPlayer.specialAnim = false;
+				focusPlayer.dance();
+			}
+		}
+		
 		if (controls.PAUSE #if android || FlxG.android.justReleased.BACK #end && startedCountdown && canPause)
 		{
 			var ret:Dynamic = callOnScripts('onPause', null, true);
