@@ -14,6 +14,9 @@ class PauseSubState extends MusicBeatSubstate
 {
 	var grpMenuShit:FlxTypedGroup<Alphabet>;
 
+	var songFrame:FlxSprite;
+    var frameTween:FlxTween;
+	
 	var menuItems:Array<String> = [];
 	var menuItemsOG:Array<String> = ['Resume', 'Restart Song', 'Chart Editor', 'Change Difficulty', 'Options', 'Exit to menu'];
 	var difficultyChoices = [];
@@ -74,6 +77,10 @@ class PauseSubState extends MusicBeatSubstate
 		bg.scrollFactor.set();
 		add(bg);
 
+		songFrame = new FlxSprite(0, 0);
+        songFrame.antialiasing = ClientPrefs.data.antialiasing;
+        add(songFrame);
+		
 		var levelInfo:FlxText = new FlxText(20, 15, 0, PlayState.SONG.song, 32);
 		levelInfo.scrollFactor.set();
 		levelInfo.setFormat(Paths.font("vcr.ttf"), 32);
@@ -168,6 +175,7 @@ class PauseSubState extends MusicBeatSubstate
 
 		if(controls.BACK)
 		{
+            songFrame.alpha = 0;
 			close();
 			return;
 		}
@@ -402,6 +410,32 @@ class PauseSubState extends MusicBeatSubstate
 	}
 
 	function regenMenu():Void {
+		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
+           var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
+
+           if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
+             imagePath = 'menu/freeplay/portraits/placeholder';
+           }
+
+           songFrame.loadGraphic(Paths.image(imagePath));
+           songFrame.scale.set(0.8, 0.8);
+           songFrame.updateHitbox();
+           songFrame.y = (FlxG.height - songFrame.height) / 2;
+
+           if (frameTween != null) {
+              frameTween.cancel();
+           }
+
+           var targetX:Float = FlxG.width - songFrame.width - 20;
+           songFrame.x = targetX + 150;
+           songFrame.alpha = 0;
+
+           frameTween = FlxTween.tween(songFrame, {x: targetX, alpha: 1}, 0.25, {
+           ease: FlxEase.quartOut,
+           onComplete: function(twn:FlxTween) {
+           frameTween = null;
+          }
+        });
 		for (i in 0...grpMenuShit.members.length)
 		{
 			var obj:Alphabet = grpMenuShit.members[0];
