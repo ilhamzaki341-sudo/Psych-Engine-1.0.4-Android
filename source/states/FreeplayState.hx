@@ -560,7 +560,7 @@ class FreeplayState extends MusicBeatState
               frameTween.cancel();
            }
 
-           var targetX:Float = FlxG.width - songFrame.width - 5;
+           var targetX:Float = FlxG.width - songFrame.width + 5;
            songFrame.x = targetX + 150;
            songFrame.alpha = 0;
 
