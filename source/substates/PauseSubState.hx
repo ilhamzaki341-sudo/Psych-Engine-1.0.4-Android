@@ -418,7 +418,7 @@ class PauseSubState extends MusicBeatSubstate
            }
 
            songFrame.loadGraphic(Paths.image(imagePath));
-           songFrame.scale.set(0.8, 0.8);
+           songFrame.scale.set(1, 1);
            songFrame.updateHitbox();
            songFrame.y = (FlxG.height - songFrame.height) / 2;
 
