@@ -63,7 +63,7 @@ class TitleState extends MusicBeatState
 	#if VIDEOS_ALLOWED
 	var introVideo:FlxVideoSprite;
 	#end
-	var playingIntroVideo:Bool = false;
+	var playingIntroVideo:Bool = true;
 
 	#if TITLE_SCREEN_EASTER_EGG
 	final easterEggKeys:Array<String> = [
