@@ -1174,7 +1174,7 @@ class PlayState extends MusicBeatState
 		callOnScripts('onUpdateScore', [miss]);
 	}
 
-	public function updateScoreTxt()
+	public dynamic function updateScoreText()
 	{
 		var acc:Float = Math.floor(ratingPercent * 10000) / 100;
 		var accDisplay:String = 'N/A';
