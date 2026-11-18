@@ -427,7 +427,7 @@ class PauseSubState extends MusicBeatSubstate
            }
 
            var targetX:Float = FlxG.width - songFrame.width - 20;
-           songFrame.x = targetX + 150;
+           songFrame.x = targetX + 125;
            songFrame.alpha = 0;
 
            frameTween = FlxTween.tween(songFrame, {x: targetX, alpha: 1}, 0.25, {
