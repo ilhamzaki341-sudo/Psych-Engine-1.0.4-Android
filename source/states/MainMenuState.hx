@@ -23,7 +23,7 @@ class MainMenuState extends MusicBeatState
 	var leftItem:FlxSprite;
 	var rightItem:FlxSprite;
     var greenMenu:FlxSprite;
-    var redMenu:FlxSprite
+    var redMenu:FlxSprite;
 
 	//Centered/Text options
 	var optionShit:Array<String> = [
