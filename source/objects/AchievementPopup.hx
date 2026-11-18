@@ -111,9 +111,7 @@ class AchievementPopup extends openfl.display.Sprite
 		this.scaleX = lastScale;
 		this.scaleY = lastScale;
 
-		var screenWidthInGame:Float = FlxG.stage.stageWidth / lastScale;
-		this.x = (screenWidthInGame - POPUP_WIDTH - 20) * lastScale;
-
+		this.x = (FlxG.width - POPUP_WIDTH - 20) * lastScale;
 		this.y = FlxG.height * lastScale;
 		this.alpha = 0;
 		intendedY = FlxG.height - POPUP_HEIGHT - 15;
@@ -212,8 +210,7 @@ class AchievementPopup extends openfl.display.Sprite
 		scaleX = mult;
 		scaleY = mult;
 
-		var screenWidthInGame:Float = FlxG.stage.stageWidth / mult;
-		x = (screenWidthInGame - POPUP_WIDTH - 20) * mult;
+		x = (FlxG.width - POPUP_WIDTH - 20) * mult;
 		y = (mult / lastScale) * y;
 		lastScale = mult;
 	}
