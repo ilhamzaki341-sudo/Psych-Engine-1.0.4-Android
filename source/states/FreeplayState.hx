@@ -42,6 +42,7 @@ class FreeplayState extends MusicBeatState
 
 	var bg:FlxSprite;
 	var songFrame:FlxSprite;
+    var frameTween:FlxTween;
 	
 	var intendedColor:Int;
 
@@ -116,7 +117,6 @@ class FreeplayState extends MusicBeatState
 		songFrame = new FlxSprite(0, 0);
         songFrame.antialiasing = ClientPrefs.data.antialiasing;
         add(songFrame);
-        songFrame.alpha = 1.0;
 		
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
@@ -544,19 +544,32 @@ class FreeplayState extends MusicBeatState
 			FlxTween.cancelTweensOf(bg);
 			FlxTween.color(bg, 1, bg.color, intendedColor);
 		}
-        var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
-        var imagePath:String = 'freeplay/' + songFormatted;
+		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
+           var imagePath:String = 'menu/pause/' + songFormatted;
 
-        if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
-            imagePath = 'freeplay/default';
-        }
+           if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
+             imagePath = 'menu/pause/placeholder';
+           }
 
-        songFrame.loadGraphic(Paths.image(imagePath));
-        songFrame.setGraphicSize(500);
-        songFrame.updateHitbox();
-		
-        songFrame.x = FlxG.width - songFrame.width - 20;
-        songFrame.y = (FlxG.height - songFrame.height) / 2;
+           songFrame.loadGraphic(Paths.image(imagePath));
+           songFrame.scale.set(0.8, 0.8);
+           songFrame.updateHitbox();
+           songFrame.y = (FlxG.height - songFrame.height) / 2;
+
+           if (frameTween != null) {
+              frameTween.cancel();
+           }
+
+           var targetX:Float = FlxG.width - songFrame.width - 20;
+           songFrame.x = targetX + 150;
+           songFrame.alpha = 0;
+
+           frameTween = FlxTween.tween(songFrame, {x: targetX, alpha: 1}, 0.25, {
+           ease: FlxEase.quartOut,
+           onComplete: function(twn:FlxTween) {
+           frameTween = null;
+          }
+        });
 		for (num => item in grpSongs.members)
 		{
 			var icon:HealthIcon = iconArray[num];
