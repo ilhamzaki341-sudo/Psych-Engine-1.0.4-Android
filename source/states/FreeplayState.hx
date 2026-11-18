@@ -545,10 +545,10 @@ class FreeplayState extends MusicBeatState
 			FlxTween.color(bg, 1, bg.color, intendedColor);
 		}
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
-           var imagePath:String = 'menu/pause/' + songFormatted;
+           var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
 
            if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
-             imagePath = 'menu/pause/placeholder';
+             imagePath = 'menu/freeplay/portraits/placeholder';
            }
 
            songFrame.loadGraphic(Paths.image(imagePath));
