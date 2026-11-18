@@ -87,7 +87,7 @@ class FunkinLua {
 		set('luaDeprecatedWarnings', true);
 		set('version', MainMenuState.psychEngineVersion.trim());
 		set('modFolder', this.modFolder);
-		set('MinMisses', PlayState.instance.MinMisses);
+		set('MinMisses', PlayState.MinMisses);
 
 		// Song/Week shit
 		set('curBpm', Conductor.bpm);
