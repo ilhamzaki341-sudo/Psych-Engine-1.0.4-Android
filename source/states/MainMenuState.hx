@@ -81,9 +81,9 @@ class MainMenuState extends MusicBeatState
 		
         // Green Impostor
         greenMenu = new FlxSprite(0, 0);
-        greenMenu.frames = Paths.getSparrowAtlas('mainmenu/greenmenu');
+        greenMenu.frames = Paths.getSparrowAtlas('menu/main/greenmenu');
         greenMenu.animation.addByPrefix('idle', 'idle', 24, true);
-        greenMenu.animation.addByPrefix('select', 'select', 24, false);
+        greenMenu.animation.addByPrefix('confirm', 'confirm', 24, false);
         greenMenu.animation.play('idle');
 		greenMenu.scale.set(0.85, 0.85);
         greenMenu.updateHitbox();
@@ -94,9 +94,9 @@ class MainMenuState extends MusicBeatState
 
         // Red Impostor
         redMenu = new FlxSprite(0, 0);
-		redMenu.frames = Paths.getSparrowAtlas('mainmenu/redmenu');
+		redMenu.frames = Paths.getSparrowAtlas('menu/main/redmenu');
         redMenu.animation.addByPrefix('idle', 'idle', 24, true);
-        redMenu.animation.addByPrefix('select', 'select', 24, false);
+        redMenu.animation.addByPrefix('confirm', 'confirm', 24, false);
         redMenu.animation.play('idle');
         redMenu.scale.set(0.85, 0.85);
         redMenu.updateHitbox();
@@ -293,8 +293,8 @@ class MainMenuState extends MusicBeatState
 
 			if (controls.ACCEPT || (FlxG.mouse.overlaps(menuItems, FlxG.camera) && FlxG.mouse.justPressed && allowMouse))
 			{
-                if (greenMenu != null) greenMenu.animation.play('select', true);
-                if (redMenu != null) redMenu.animation.play('select', true);
+                if (greenMenu != null) greenMenu.animation.play('confirm', true);
+                if (redMenu != null) redMenu.animation.play('confirm', true);
 				FlxG.sound.play(Paths.sound('confirmMenu'));
 				selectedSomethin = true;
 				FlxG.mouse.visible = false;
