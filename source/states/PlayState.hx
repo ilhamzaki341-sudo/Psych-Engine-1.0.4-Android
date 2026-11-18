@@ -1199,7 +1199,9 @@ class PlayState extends MusicBeatState
 		}
 
 		var tempScore:String;
-		if (!instakillOnMiss)
+	    if (PlayState.SONG.song.toLowerCase() == 'defeat')
+	        tempScore = Language.getPhrase('score_text', 'Score: {1} | Misses: {2} | Accuracy: {3} | Rank: {4}', [scoreFormatted, songMisses + ' / ' + MinMisses, accDisplay, rankDisplay]);
+		else if (!instakillOnMiss)
 			tempScore = Language.getPhrase('score_text', 'Score: {1} | Misses: {2} | Accuracy: {3} | Rank: {4}', [scoreFormatted, missText, accDisplay, rankDisplay]);
 		else
 			tempScore = Language.getPhrase('score_text_instakill', 'Score: {1} | Accuracy: {2} | Rank: {3}', [scoreFormatted, accDisplay, rankDisplay]);
