@@ -410,7 +410,7 @@ class PauseSubState extends MusicBeatSubstate
 	}
 
 	function regenMenu():Void {
-		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
+		var songFormatted:String = Paths.formatToSongPath(PlayState.SONG.song);
            var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
 
            if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
