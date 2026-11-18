@@ -41,6 +41,8 @@ class FreeplayState extends MusicBeatState
 	private var iconArray:Array<HealthIcon> = [];
 
 	var bg:FlxSprite;
+	var songFrame:FlxSprite;
+	
 	var intendedColor:Int;
 
 	var missingTextBG:FlxSprite;
@@ -110,7 +112,12 @@ class FreeplayState extends MusicBeatState
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 		bg.screenCenter();
-
+		
+		songFrame = new FlxSprite(-10, -10);
+        songFrame.antialiasing = ClientPrefs.data.antialiasing;
+        add(songFrame);
+        songFrame.alpha = 0.0;
+		
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
 
@@ -152,9 +159,7 @@ class FreeplayState extends MusicBeatState
 		diffText = new FlxText(scoreText.x, scoreText.y + 36, 0, "", 24);
 		diffText.font = scoreText.font;
 		add(diffText);
-
 		add(scoreText);
-
 
 		missingTextBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		missingTextBG.alpha = 0.6;
@@ -539,7 +544,17 @@ class FreeplayState extends MusicBeatState
 			FlxTween.cancelTweensOf(bg);
 			FlxTween.color(bg, 1, bg.color, intendedColor);
 		}
+        var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
+        var imagePath:String = 'freeplay/' + songFormatted;
 
+        if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
+            imagePath = 'freeplay/default';
+        }
+
+       songFrame.loadGraphic(Paths.image(imagePath));
+       songFrame.setGraphicSize(Std.int(songFrame.width * 1.05));
+       songFrame.updateHitbox();
+		
 		for (num => item in grpSongs.members)
 		{
 			var icon:HealthIcon = iconArray[num];
