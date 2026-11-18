@@ -91,8 +91,8 @@ class MainMenuState extends MusicBeatState
         greenMenu.updateHitbox();
         greenMenu.antialiasing = ClientPrefs.data.antialiasing;
         greenMenu.scrollFactor.set(0, 0);
-        greenMenu.x = -20;
-        greenMenu.y = FlxG.height - greenMenu.height + 20;
+        greenMenu.x = -50;
+        greenMenu.y = FlxG.height - greenMenu.height + 40;
         add(greenMenu);
 
         // Red Impostor
@@ -105,8 +105,8 @@ class MainMenuState extends MusicBeatState
         redMenu.updateHitbox();
         redMenu.antialiasing = ClientPrefs.data.antialiasing;
         redMenu.scrollFactor.set(0, 0);
-        redMenu.x = FlxG.width - redMenu.width + 20;
-        redMenu.y = FlxG.height - redMenu.height + 20;
+        redMenu.x = FlxG.width - redMenu.width + 10;
+        redMenu.y = FlxG.height - redMenu.height + 30;
         add(redMenu);
 		
 		for (num => option in optionShit)
