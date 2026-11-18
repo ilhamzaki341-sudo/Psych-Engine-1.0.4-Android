@@ -1161,10 +1161,6 @@ class PlayState extends MusicBeatState
 		}
 	}
 
-	// fun fact: Dynamic Functions can be overriden by just doing this
-	// `updateScore = function(miss:Bool = false) { ... }
-	// its like if it was a variable but its just a function!
-	// cool right? -Crow
 	public dynamic function updateScore(miss:Bool = false, scoreBop:Bool = true)
 	{
 		var ret:Dynamic = callOnScripts('preUpdateScore', [miss], true);
@@ -1178,19 +1174,76 @@ class PlayState extends MusicBeatState
 		callOnScripts('onUpdateScore', [miss]);
 	}
 
-	public dynamic function updateScoreText()
+	public function updateScoreTxt()
 	{
-		var str:String = Language.getPhrase('rating_$ratingName', ratingName);
-		if(totalPlayed != 0)
+		var acc:Float = Math.floor(ratingPercent * 10000) / 100;
+		var accDisplay:String = 'N/A';
+		var rankDisplay:String = getLegacyRank(acc, songMisses, songHits);
+
+		if (songHits > 0 || songMisses > 0)
 		{
-			var percent:Float = CoolUtil.floorDecimal(ratingPercent * 100, 2);
-			str += ' (${percent}%) - ' + Language.getPhrase(ratingFC);
+			var percentStr:String = Std.string(CoolUtil.floorDecimal(acc, 2));
+			if (percentStr.indexOf('.') == -1)
+				percentStr += '.00';
+			else if (percentStr.split('.').length == 1)
+				percentStr += '0';
+			accDisplay = percentStr + '%';
+		}
+
+		var scoreFormatted:String = formatScoreNumber(songScore);
+		var missText:String = Std.string(songMisses);
+
+		if (PlayState.SONG.song.toLowerCase() == 'victory')
+		{
+			missText = Language.getPhrase('victory_misses', 'Who cares? You already won!');
 		}
 
 		var tempScore:String;
-		if(!instakillOnMiss) tempScore = Language.getPhrase('score_text', 'Score: {1} | Misses: {2} | Rating: {3}', [songScore, songMisses, str]);
-		else tempScore = Language.getPhrase('score_text_instakill', 'Score: {1} | Rating: {2}', [songScore, str]);
+		if (!instakillOnMiss)
+			tempScore = Language.getPhrase('score_text', 'Score: {1} | Misses: {2} | Accuracy: {3} | Rank: {4}', [scoreFormatted, missText, accDisplay, rankDisplay]);
+		else
+			tempScore = Language.getPhrase('score_text_instakill', 'Score: {1} | Accuracy: {2} | Rank: {3}', [scoreFormatted, accDisplay, rankDisplay]);
+
 		scoreTxt.text = tempScore;
+	}
+
+	function getLegacyRank(acc:Float, misses:Int, hits:Int):String
+	{
+		if (hits == 0 && misses == 0) return 'N/A';
+		if (misses == 0 && acc >= 99.0) return 'P';
+		if (misses == 0 && acc >= 90.0) return 'S';
+		if (acc >= 80.0) return 'A';
+		if (acc >= 70.0) return 'B';
+		if (acc >= 60.0) return 'C';
+		if (acc >= 50.0) return 'D';
+		if (acc >= 40.0) return 'E';
+		return 'F';
+	}
+
+	function formatScoreNumber(amount:Int):String
+	{
+		var str:String = Std.string(amount);
+		var isNegative:Bool = false;
+		if (amount < 0)
+		{
+			isNegative = true;
+			str = str.substr(1);
+		}
+		var result:String = "";
+		var count:Int = 0;
+		var i:Int = str.length - 1;
+		while (i >= 0)
+		{
+			result = str.charAt(i) + result;
+			count++;
+			if (count == 3 && i > 0)
+			{
+				result = "," + result;
+				count = 0;
+			}
+			i--;
+		}
+		return (isNegative ? "-" : "") + result;
 	}
 
 	public dynamic function fullComboFunction()
