@@ -78,7 +78,33 @@ class MainMenuState extends MusicBeatState
 
 		menuItems = new FlxTypedGroup<FlxSprite>();
 		add(menuItems);
+		
+        // Green Impostor
+        greenMenu = new FlxSprite(0, 0);
+        greenMenu.frames = Paths.getSparrowAtlas('mainmenu/greenmenu');
+        greenMenu.animation.addByPrefix('idle', 'idle', 24, true);
+        greenMenu.animation.addByPrefix('select', 'select', 24, false);
+        greenMenu.animation.play('idle');
+		greenMenu.scale.set(0.85, 0.85);
+        greenMenu.updateHitbox();
+        greenMenu.antialiasing = ClientPrefs.data.antialiasing;
+        greenMenu.x = 0;
+        greenMenu.y = FlxG.height - greenMenu.height;
+        add(greenMenu);
 
+        // Red Impostor
+        redMenu = new FlxSprite(0, 0);
+		redMenu.frames = Paths.getSparrowAtlas('mainmenu/redmenu');
+        redMenu.animation.addByPrefix('idle', 'idle', 24, true);
+        redMenu.animation.addByPrefix('select', 'select', 24, false);
+        redMenu.animation.play('idle');
+        redMenu.scale.set(0.85, 0.85);
+        redMenu.updateHitbox();
+        redMenu.antialiasing = ClientPrefs.data.antialiasing;
+        redMenu.x = FlxG.width - redMenu.width;
+        redMenu.y = FlxG.height - redMenu.height;
+        add(redMenu);
+		
 		for (num => option in optionShit)
 		{
 			var item:FlxSprite = createMenuItem(option, 0, (num * 140) + 90);
@@ -267,6 +293,8 @@ class MainMenuState extends MusicBeatState
 
 			if (controls.ACCEPT || (FlxG.mouse.overlaps(menuItems, FlxG.camera) && FlxG.mouse.justPressed && allowMouse))
 			{
+                if (greenMenu != null) greenMenu.animation.play('select', true);
+                if (redMenu != null) redMenu.animation.play('select', true);
 				FlxG.sound.play(Paths.sound('confirmMenu'));
 				selectedSomethin = true;
 				FlxG.mouse.visible = false;
