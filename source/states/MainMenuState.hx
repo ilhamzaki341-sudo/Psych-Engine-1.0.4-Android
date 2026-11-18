@@ -19,11 +19,11 @@ class MainMenuState extends MusicBeatState
 	public static var curColumn:MainMenuColumn = CENTER;
 	var allowMouse:Bool = true; //Turn this off to block mouse movement in menus
 
+    var greenMenu:FlxSprite;
+    var redMenu:FlxSprite;
 	var menuItems:FlxTypedGroup<FlxSprite>;
 	var leftItem:FlxSprite;
 	var rightItem:FlxSprite;
-    var greenMenu:FlxSprite;
-    var redMenu:FlxSprite;
 
 	//Centered/Text options
 	var optionShit:Array<String> = [
@@ -90,8 +90,9 @@ class MainMenuState extends MusicBeatState
 		greenMenu.scale.set(0.85, 0.85);
         greenMenu.updateHitbox();
         greenMenu.antialiasing = ClientPrefs.data.antialiasing;
-        greenMenu.x = 0;
-        greenMenu.y = FlxG.height - greenMenu.height;
+        greenMenu.scrollFactor.set(0, 0);
+        greenMenu.x = -20;
+        greenMenu.y = FlxG.height - greenMenu.height + 20;
         add(greenMenu);
 
         // Red Impostor
@@ -103,8 +104,9 @@ class MainMenuState extends MusicBeatState
         redMenu.scale.set(0.85, 0.85);
         redMenu.updateHitbox();
         redMenu.antialiasing = ClientPrefs.data.antialiasing;
-        redMenu.x = FlxG.width - redMenu.width;
-        redMenu.y = FlxG.height - redMenu.height;
+        redMenu.scrollFactor.set(0, 0);
+        redMenu.x = FlxG.width - redMenu.width + 20;
+        redMenu.y = FlxG.height - redMenu.height + 20;
         add(redMenu);
 		
 		for (num => option in optionShit)
