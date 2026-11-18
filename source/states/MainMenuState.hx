@@ -19,6 +19,8 @@ class MainMenuState extends MusicBeatState
 	public static var curColumn:MainMenuColumn = CENTER;
 	var allowMouse:Bool = true; //Turn this off to block mouse movement in menus
 
+	var logoBl:FlxSprite;
+	var logoPosition:FlxPoint = FlxPoint.get(-150, -100);
 	var menuItems:FlxTypedGroup<FlxSprite>;
 	var leftItem:FlxSprite;
 	var rightItem:FlxSprite;
@@ -63,6 +65,14 @@ class MainMenuState extends MusicBeatState
 		bg.screenCenter();
 		add(bg);
 
+		logoBl = new FlxSprite(logoPosition.x, logoPosition.y);
+		logoBl.frames = Paths.getSparrowAtlas('logoBumpin');
+		logoBl.antialiasing = ClientPrefs.data.antialiasing;
+
+		logoBl.animation.addByPrefix('bump', 'logo bumpin', 24, false);
+		logoBl.animation.play('bump');
+		logoBl.updateHitbox();
+		
 		camFollow = new FlxObject(0, 0, 1, 1);
 		add(camFollow);
 
