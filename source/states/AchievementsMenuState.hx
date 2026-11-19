@@ -42,13 +42,11 @@ class AchievementsMenuState extends MusicBeatState
 		camFollow = new FlxObject(0, 0, 1, 1);
 		add(camFollow);
 
-		menuBG = new FlxSprite(null, X).loadGraphic(Paths.image('menu/common/starFG'));
-		menuBG.antialiasing = ClientPrefs.data.antialiasing;
-		menuBG.setGraphicSize(Std.int(menuBG.width * 1.1));
-		menuBG.updateHitbox();
-		menuBG.screenCenter();
-		menuBG.scrollFactor.set();
-		add(menuBG);
+        menuBG = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        menuBG.setGraphicSize(1280, 720);
+        menuBG.updateHitbox();
+        menuBG.antialiasing = ClientPrefs.data.antialiasing;
+        add(menuBG);
 
 		grpOptions = new FlxSpriteGroup();
 		grpOptions.scrollFactor.x = 0;
