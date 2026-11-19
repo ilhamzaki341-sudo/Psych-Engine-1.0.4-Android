@@ -63,7 +63,7 @@ class TitleState extends MusicBeatState
 	#if VIDEOS_ALLOWED
 	var introVideo:FlxVideoSprite;
 	#end
-	var playingIntroVideo:Bool = true;
+	var playingIntroVideo:Bool = false;
 
 	#if TITLE_SCREEN_EASTER_EGG
 	final easterEggKeys:Array<String> = [
@@ -391,6 +391,7 @@ class TitleState extends MusicBeatState
 		var pressedEnter:Bool = FlxG.keys.justPressed.ENTER || controls.ACCEPT || TouchUtil.justPressed;
 
 		var gamepad:FlxGamepad = FlxG.gamepads.lastActive;
+		bg.x -= 9 * elapsed;
 
 		if (gamepad != null)
 		{
