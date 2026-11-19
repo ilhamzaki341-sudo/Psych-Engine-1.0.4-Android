@@ -60,7 +60,7 @@ class TitleState extends MusicBeatState
 	var curWacky:Array<String> = [];
 
 	var wackyImage:FlxSprite;
-	var bg:FlxBackdrop
+	var bg:FlxBackdrop;
 
 	#if VIDEOS_ALLOWED
 	var introVideo:FlxVideoSprite;
