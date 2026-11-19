@@ -175,8 +175,8 @@ class FreeplayState extends MusicBeatState
 		add(missingText);
 
 		if(curSelected >= songs.length) curSelected = 0;
-		bg.color = songs[curSelected].color;
-		intendedColor = bg.color;
+		bottomBG.color = songs[curSelected].color;
+		intendedColor = bottomBG.color;
 		lerpSelected = curSelected;
 
 		curDifficulty = Math.round(Math.max(0, Difficulty.defaultList.indexOf(lastDifficultyName)));
