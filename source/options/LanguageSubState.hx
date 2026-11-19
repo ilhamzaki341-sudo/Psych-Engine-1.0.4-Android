@@ -103,6 +103,7 @@ class LanguageSubState extends MusicBeatSubstate
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+	  	menuBG.x -= 9 * elapsed;
 
 		var mult:Int = (FlxG.keys.pressed.SHIFT) ? 4 : 1;
 		if(controls.UI_UP_P)
