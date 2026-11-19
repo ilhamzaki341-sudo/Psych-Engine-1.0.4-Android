@@ -127,12 +127,13 @@ class FreeplayState extends MusicBeatState
 			var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/freeplay/card'));
 			bar.antialiasing = ClientPrefs.data.antialiasing;
 			bar.ID = i;
+			bar.visible = bar.active = false;
 			grpBars.add(bar);
 			
 			Mods.currentModDirectory = songs[i].folder;
 			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
 			icon.sprTracker = songText;
-			icon.scale.set(0.75, 0.75);
+			icon.scale.set(0.6, 0.6);
 			
 			songText.visible = songText.active = songText.isMenuItem = false;
 			icon.visible = icon.active = false;
@@ -630,6 +631,12 @@ class FreeplayState extends MusicBeatState
 
 			var icon:HealthIcon = iconArray[i];
 			icon.visible = icon.active = true;
+			
+			var bar:FlxSprite = grpBars.members[i];
+			bar.visible = bar.active = true;
+			bar.x = item.x - 20;
+			bar.y = item.y - 15;
+			
 			_lastVisibles.push(i);
 		}
 	}
