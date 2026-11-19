@@ -20,6 +20,7 @@ class MainMenuState extends MusicBeatState
 	public static var curColumn:MainMenuColumn = CENTER;
 	var allowMouse:Bool = true; //Turn this off to block mouse movement in menus
 
+	var bg:FlxBackdrop;
 	var logoBl:FlxSprite;
 	var logoPosition:FlxPoint = FlxPoint.get(-150, -100);
 	var menuItems:FlxTypedGroup<FlxSprite>;
@@ -58,7 +59,7 @@ class MainMenuState extends MusicBeatState
 		persistentUpdate = persistentDraw = true;
 
 		var yScroll:Float = 0.25;
-		var bg:FlxBackdrop = new FlxBackdrop(-80, X).loadGraphic(Paths.image('menu/common/starFG'));
+	    bg = new FlxBackdrop(-80, X).loadGraphic(Paths.image('menu/common/starFG'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		bg.scrollFactor.set(0, yScroll);
 		bg.setGraphicSize(Std.int(bg.width * 1.175));
