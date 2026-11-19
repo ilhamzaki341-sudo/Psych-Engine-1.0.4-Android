@@ -86,13 +86,10 @@ class FreeplayState extends MusicBeatState
 			if(weekIsLocked(WeekData.weeksList[i])) continue;
 
 			var leWeek:WeekData = WeekData.weeksLoaded.get(WeekData.weeksList[i]);
-			var leSongs:Array<String> = [];
-			var leChars:Array<String> = [];
 
 			for (j in 0...leWeek.songs.length)
 			{
-				leSongs.push(leWeek.songs[j][0]);
-				leChars.push(leWeek.songs[j][1]);
+				addSong(leWeek.songs[j][0], i, leWeek.songs[j][1]);
 			}
 		}
 
@@ -566,8 +563,8 @@ class FreeplayState extends MusicBeatState
 		
 		var savedDiff:String = songs[curSelected].lastDifficulty;
 		var lastDiff:Int = Difficulty.list.indexOf(lastDifficultyName);
-		if(savedDiff != null && !Difficulty.list.contains(savedDiff) && Difficulty.list.contains(savedDiff))
-			curDifficulty = Math.round(Math.max(0, Difficulty.list.indexOf(savedDiff)));
+		if(savedDiff != null && Difficulty.list.contains(savedDiff))
+			curDifficulty = Difficulty.list.indexOf(savedDiff);
 		else if(lastDiff > -1)
 			curDifficulty = lastDiff;
 		else if(Difficulty.list.contains(Difficulty.getDefault()))
