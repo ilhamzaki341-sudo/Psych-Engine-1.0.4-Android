@@ -534,8 +534,8 @@ class FreeplayState extends MusicBeatState
 	{
 		if (player.playingMusic)
 			return;
-
-		curSelected = FlxMath.wrap(curSelected + change, 0, songs.length-1);
+		
+        curSelected = Std.int(FlxMath.bound(curSelected + change, 0, songs.length - 1));
 		_updateSongLastDifficulty();
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
