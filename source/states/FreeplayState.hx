@@ -1,5 +1,6 @@
 package states;
 
+import flixel.addons.display.FlxBackdrop;
 import backend.WeekData;
 import backend.Highscore;
 import backend.Song;
@@ -40,7 +41,7 @@ class FreeplayState extends MusicBeatState
 
 	private var iconArray:Array<HealthIcon> = [];
 
-	var bg:FlxSprite;
+	var bg:FlxBackdrop;
 	var songFrame:FlxSprite;
     var frameTween:FlxTween;
 	
@@ -109,7 +110,7 @@ class FreeplayState extends MusicBeatState
 		}
 		Mods.loadTopMod();
 
-		bg = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
+		bg = new FlxBackdrop().loadGraphic(Paths.image('menu/common/starFG'), X)
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 		bg.screenCenter();
