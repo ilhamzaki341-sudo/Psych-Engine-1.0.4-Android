@@ -26,10 +26,11 @@ class CreditsState extends MusicBeatState
 		#end
 
 		persistentUpdate = true;
-		bg = new FlxBackdrop(null, X).loadGraphic(Paths.image('menu/common/starFG'));
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		add(bg);
-		bg.screenCenter();
+        bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        bg.setGraphicSize(1280, 720);
+        bg.updateHitbox();
+        bg.antialiasing = ClientPrefs.data.antialiasing;
+        add(bg);
 		
 		grpOptions = new FlxTypedGroup<Alphabet>();
 		add(grpOptions);
