@@ -49,6 +49,7 @@ class OptionsState extends MusicBeatState
 
 	var selectorLeft:Alphabet;
 	var selectorRight:Alphabet;
+	var bg:FlxBackdrop;
 
 	override function create()
 	{
