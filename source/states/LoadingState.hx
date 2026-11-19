@@ -64,6 +64,7 @@ class LoadingState extends MusicBeatState
 	var stateChangeDelay:Float = 0;
 
 	#if PSYCH_WATERMARKS
+	var bg:FlxBackdrop;
 	var logo:FlxSprite;
 	var pessy:FlxSprite;
 	var loadingText:FlxText;
@@ -159,7 +160,7 @@ class LoadingState extends MusicBeatState
 		addBehindBar(logo);
 
 		#else // BASE GAME LOADING SCREEN
-		var bg = new FlxSprite().makeGraphic(1, 1, 0xFFCAFF4D);
+		bg = new FlxSprite().makeGraphic(1, 1, 0xFFCAFF4D);
 		bg.scale.set(FlxG.width, FlxG.height);
 		bg.updateHitbox();
 		bg.screenCenter();
