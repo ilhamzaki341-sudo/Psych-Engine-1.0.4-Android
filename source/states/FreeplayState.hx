@@ -96,7 +96,6 @@ class FreeplayState extends MusicBeatState
 			}
 		}
 
-		WeekData.setDirectoryFromWeek(leWeek);
 		Mods.loadTopMod();
 
         bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
