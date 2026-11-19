@@ -1,5 +1,6 @@
 package options;
 
+import flixel.addons.display.FlxBackdrop;
 import flixel.input.keyboard.FlxKey;
 import flixel.input.gamepad.FlxGamepad;
 import flixel.input.gamepad.FlxGamepadInputID;
@@ -26,7 +27,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 	public var title:String;
 	public var rpcTitle:String;
 
-	public var bg:FlxSprite;
+	public var bg:FlxBackdrop;
 	public function new()
 	{
 		controls.isInSubstate = true;
@@ -40,10 +41,11 @@ class BaseOptionsMenu extends MusicBeatSubstate
 		DiscordClient.changePresence(rpcTitle, null);
 		#end
 		
-		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
-		bg.color = 0xFFea71fd;
+        bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        bg.setGraphicSize(1280, 720);
+        bg.updateHitbox();
+        bg.antialiasing = ClientPrefs.data.antialiasing;
 		bg.screenCenter();
-		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 
 		// avoids lagspikes while scrolling through menus!
@@ -127,6 +129,7 @@ class BaseOptionsMenu extends MusicBeatSubstate
 	override function update(elapsed:Float)
 	{
 		super.update(elapsed);
+		bg.x -= 9 * elapsed;
 
 		if(bindingKey)
 		{
