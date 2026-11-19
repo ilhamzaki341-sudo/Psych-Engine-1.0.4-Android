@@ -162,6 +162,7 @@ class AchievementsMenuState extends MusicBeatState
 			if (controls.UI_LEFT_P) add = -1;
 			else if (controls.UI_RIGHT_P) add = 1;
 
+	     	menuBG.x -= 9 * elapsed;
 			if(add != 0)
 			{
 				var oldRow:Int = Math.floor(curSelected / MAX_PER_ROW);
@@ -316,7 +317,6 @@ class ResetAchievementSubstate extends MusicBeatSubstate
 			return;
 		}
 
-		menuBG.x -= 9 * elapsed;
 		super.update(elapsed);
 
 		if(controls.UI_LEFT_P || controls.UI_RIGHT_P) {
