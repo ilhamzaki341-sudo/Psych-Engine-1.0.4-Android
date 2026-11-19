@@ -60,6 +60,7 @@ class TitleState extends MusicBeatState
 	var curWacky:Array<String> = [];
 
 	var wackyImage:FlxSprite;
+	var bg:FlxBackdrop
 
 	#if VIDEOS_ALLOWED
 	var introVideo:FlxVideoSprite;
@@ -311,7 +312,7 @@ class TitleState extends MusicBeatState
 	
 					if (titleJSON.backgroundSprite != null && titleJSON.backgroundSprite.trim().length > 0)
 					{
-						var bg:FlxBackdrop = new FlxBackdrop(null, X).loadGraphic(Paths.image(titleJSON.backgroundSprite));
+						bg = new FlxBackdrop(null, X).loadGraphic(Paths.image(titleJSON.backgroundSprite));
 						bg.antialiasing = ClientPrefs.data.antialiasing;
 						add(bg);
 					}
