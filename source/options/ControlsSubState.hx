@@ -49,7 +49,7 @@ class ControlsSubState extends MusicBeatSubstate
 	var curOptionsValid:Array<Int>;
 	static var defaultKey:String = 'Reset to Default Keys';
 
-	var bg:FlxSprite;
+	var menuBG:FlxBackdrop;
 	var grpDisplay:FlxTypedGroup<Alphabet>;
 	var grpBlacks:FlxTypedGroup<AttachedSprite>;
 	var grpOptions:FlxTypedGroup<Alphabet>;
@@ -76,11 +76,12 @@ class ControlsSubState extends MusicBeatSubstate
 		options.push([true]);
 		options.push([true, defaultKey]);
 
-		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
-		bg.color = keyboardColor;
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.screenCenter();
-		add(bg);
+        menuBG = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        menuBG.setGraphicSize(1280, 720);
+        menuBG.updateHitbox();
+        menuBG.antialiasing = ClientPrefs.data.antialiasing;
+		menuBG.screenCenter();
+		add(menuBG);
 
 		var grid:FlxBackdrop = new FlxBackdrop(FlxGridOverlay.createGrid(80, 80, 160, 160, true, 0x33FFFFFF, 0x0));
 		grid.velocity.set(40, 40);
