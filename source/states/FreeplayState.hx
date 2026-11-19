@@ -544,8 +544,8 @@ class FreeplayState extends MusicBeatState
 		if(newColor != intendedColor)
 		{
 			intendedColor = newColor;
-			FlxTween.cancelTweensOf(bg);
-			FlxTween.color(bg, 1, bg.color, intendedColor);
+			FlxTween.cancelTweensOf(bottomBG);
+			FlxTween.color(bottomBG, 1, bottomBG.color, intendedColor);
 		}
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
            var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
