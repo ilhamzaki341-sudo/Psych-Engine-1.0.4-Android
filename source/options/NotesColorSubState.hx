@@ -210,6 +210,7 @@ class NotesColorSubState extends MusicBeatSubstate
 		}
 
 		super.update(elapsed);
+		menuBG.x -= 9 * elapsed;
 
 		// Early controller checking
 		if(FlxG.gamepads.anyJustPressed(ANY)) controls.controllerMode = true;
