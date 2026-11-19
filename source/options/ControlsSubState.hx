@@ -465,6 +465,7 @@ class ControlsSubState extends MusicBeatSubstate
 			}
 		}
 		super.update(elapsed);
+	   	menuBG.x -= 9 * elapsed;
 	}
 
 	function closeBinding()
