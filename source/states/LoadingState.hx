@@ -9,6 +9,7 @@ import openfl.utils.AssetType;
 import openfl.utils.Assets as OpenFlAssets;
 import flixel.graphics.FlxGraphic;
 import flixel.system.FlxAssets;
+import flixel.addons.display.FlxBackdrop;
 import flixel.FlxState;
 
 import flash.media.Sound;
@@ -137,7 +138,7 @@ class LoadingState extends MusicBeatState
 		#end
 
 		#if PSYCH_WATERMARKS // PSYCH LOADING SCREEN
-		var bg = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
+		var bg = new FlxBackdrop(null, X).loadGraphic(Paths.image('menu/common/starFG'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		bg.setGraphicSize(Std.int(FlxG.width));
 		bg.color = 0xFFD16FFF;
