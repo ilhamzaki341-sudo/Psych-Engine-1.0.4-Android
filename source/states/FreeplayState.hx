@@ -174,11 +174,6 @@ class FreeplayState extends MusicBeatState
 		missingText.visible = false;
 		add(missingText);
 
-		if(curSelected >= songs.length) curSelected = 0;
-		bottomBG.color = songs[curSelected].color;
-		intendedColor = bottomBG.color;
-		lerpSelected = curSelected;
-
 		curDifficulty = Math.round(Math.max(0, Difficulty.defaultList.indexOf(lastDifficultyName)));
 
 		bottomBG = new FlxSprite(0, FlxG.height - 26).makeGraphic(FlxG.width, 26, 0xFF000000);
@@ -216,9 +211,9 @@ class FreeplayState extends MusicBeatState
 		addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
 	}
 
-	public function addSong(songName:String, weekNum:Int, songCharacter:String, color:Int)
+	public function addSong(songName:String, weekNum:Int, songCharacter:String)
 	{
-		songs.push(new SongMetadata(songName, weekNum, songCharacter, color));
+		songs.push(new SongMetadata(songName, weekNum, songCharacter));
 	}
 
 	function weekIsLocked(name:String):Bool
@@ -540,13 +535,6 @@ class FreeplayState extends MusicBeatState
 		_updateSongLastDifficulty();
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
-		var newColor:Int = songs[curSelected].color;
-		if(newColor != intendedColor)
-		{
-			intendedColor = newColor;
-			FlxTween.cancelTweensOf(bottomBG);
-			FlxTween.color(bottomBG, 1, bottomBG.color, intendedColor);
-		}
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
            var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
 
@@ -658,7 +646,6 @@ class SongMetadata
 	public var songName:String = "";
 	public var week:Int = 0;
 	public var songCharacter:String = "";
-	public var color:Int = -7179779;
 	public var folder:String = "";
 	public var lastDifficulty:String = null;
 
@@ -667,8 +654,7 @@ class SongMetadata
 		this.songName = song;
 		this.week = week;
 		this.songCharacter = songCharacter;
-		this.color = color;
 		this.folder = Mods.currentModDirectory;
 		if(this.folder == null) this.folder = '';
-	}
+	 dereng RW);
 }
