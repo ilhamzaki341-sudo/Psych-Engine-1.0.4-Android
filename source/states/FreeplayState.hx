@@ -44,8 +44,6 @@ class FreeplayState extends MusicBeatState
 	var bg:FlxBackdrop;
 	var songFrame:FlxSprite;
     var frameTween:FlxTween;
-	
-	var intendedColor:Int;
 
 	var missingTextBG:FlxSprite;
 	var missingText:FlxText;
@@ -96,18 +94,9 @@ class FreeplayState extends MusicBeatState
 				leSongs.push(leWeek.songs[j][0]);
 				leChars.push(leWeek.songs[j][1]);
 			}
-
-			WeekData.setDirectoryFromWeek(leWeek);
-			for (song in leWeek.songs)
-			{
-				var colors:Array<Int> = song[2];
-				if(colors == null || colors.length < 3)
-				{
-					colors = [146, 113, 253];
-				}
-				addSong(song[0], i, song[1], FlxColor.fromRGB(colors[0], colors[1], colors[2]));
-			}
 		}
+
+		WeekData.setDirectoryFromWeek(leWeek);
 		Mods.loadTopMod();
 
         bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
@@ -135,7 +124,6 @@ class FreeplayState extends MusicBeatState
 			Mods.currentModDirectory = songs[i].folder;
 			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
 			icon.sprTracker = songText;
-
 			
 			// too laggy with a lot of songs, so i had to recode the logic for it
 			songText.visible = songText.active = songText.isMenuItem = false;
@@ -649,7 +637,7 @@ class SongMetadata
 	public var folder:String = "";
 	public var lastDifficulty:String = null;
 
-	public function new(song:String, week:Int, songCharacter:String, color:Int)
+	public function new(song:String, week:Int, songCharacter:String)
 	{
 		this.songName = song;
 		this.week = week;
