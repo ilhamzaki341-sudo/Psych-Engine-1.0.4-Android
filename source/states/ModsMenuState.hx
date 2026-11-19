@@ -71,7 +71,7 @@ class ModsMenuState extends MusicBeatState
 		DiscordClient.changePresence("In the Menus", null);
 		#end
 
-		bg = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
+		bg = new FlxBackdrop(null, X).loadGraphic(Paths.image('menu/common/starFG'));
 		bg.color = 0xFF665AFF;
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
