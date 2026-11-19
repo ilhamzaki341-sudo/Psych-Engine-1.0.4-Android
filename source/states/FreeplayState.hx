@@ -110,7 +110,7 @@ class FreeplayState extends MusicBeatState
 		}
 		Mods.loadTopMod();
 
-		bg = new FlxBackdrop().loadGraphic(Paths.image('menu/common/starFG'), X)
+		bg = new FlxBackdrop(null, X).loadGraphic(Paths.image('menu/common/starFG'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 		bg.screenCenter();
