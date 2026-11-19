@@ -141,7 +141,7 @@ class FreeplayState extends MusicBeatState
 		
         var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/freeplay/card'));
         bar.antialiasing = ClientPrefs.data.antialiasing;
-        bar.ID = i;
+        bar.ID = grpBars.length;
         grpBars.add(bar);
 		
 		scoreText = new FlxText(FlxG.width * 0.7, 5, 0, "", 32);
