@@ -1,5 +1,6 @@
 package states;
 
+import flixel.addons.display.FlxBackdrop;
 import objects.AttachedSprite;
 
 class CreditsState extends MusicBeatState
@@ -25,7 +26,7 @@ class CreditsState extends MusicBeatState
 		#end
 
 		persistentUpdate = true;
-		bg = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
+		bg = new FlxBackdrop().loadGraphic(Paths.image('menu/common/starFG'), X);
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 		bg.screenCenter();
