@@ -187,6 +187,7 @@ class MainMenuState extends MusicBeatState
 						selectedItem = rightItem;
 				}
 
+	          	bg.x -= 9 * elapsed;
 				if(leftItem != null && FlxG.mouse.overlaps(leftItem))
 				{
 					allowMouse = true;
@@ -342,7 +343,6 @@ class MainMenuState extends MusicBeatState
 					}
 				});
 				
-        		bg.x -= 9 * elapsed;
 				for (memb in menuItems)
 				{
 					if(memb == item)
