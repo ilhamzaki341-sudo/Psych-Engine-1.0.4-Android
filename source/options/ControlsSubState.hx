@@ -513,8 +513,8 @@ class ControlsSubState extends MusicBeatSubstate
 
 	function swapMode()
 	{
-		FlxTween.cancelTweensOf(bg);
-		FlxTween.color(bg, 0.5, bg.color, onKeyboardMode ? gamepadColor : keyboardColor, {ease: FlxEase.linear});
+		FlxTween.cancelTweensOf(menuBG);
+		FlxTween.color(menuBG, 0.5, menuBG.color, onKeyboardMode ? gamepadColor : keyboardColor, {ease: FlxEase.linear});
 		onKeyboardMode = !onKeyboardMode;
 
 		curSelected = 0;
