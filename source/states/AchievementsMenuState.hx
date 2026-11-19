@@ -1,5 +1,6 @@
 package states;
 
+import flixel.addons.display.FlxBackdrop;
 import flixel.FlxObject;
 import flixel.util.FlxSort;
 import objects.Bar;
@@ -40,7 +41,7 @@ class AchievementsMenuState extends MusicBeatState
 		camFollow = new FlxObject(0, 0, 1, 1);
 		add(camFollow);
 
-		var menuBG:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
+		var menuBG:FlxBackdrop = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'), X);
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.setGraphicSize(Std.int(menuBG.width * 1.1));
 		menuBG.updateHitbox();
