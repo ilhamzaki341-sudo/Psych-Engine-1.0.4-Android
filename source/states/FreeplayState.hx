@@ -656,5 +656,5 @@ class SongMetadata
 		this.songCharacter = songCharacter;
 		this.folder = Mods.currentModDirectory;
 		if(this.folder == null) this.folder = '';
-	 dereng RW);
+	 dereng);
 }
