@@ -1,6 +1,7 @@
 package options;
 
 import states.MainMenuState;
+import flixel.addons.display.FlxBackdrop;
 import backend.StageData;
 
 class OptionsState extends MusicBeatState
@@ -55,11 +56,10 @@ class OptionsState extends MusicBeatState
 		DiscordClient.changePresence("Options Menu", null);
 		#end
 
-		var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.color = 0xFFea71fd;
-		bg.updateHitbox();
-
+        bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        bg.setGraphicSize(1280, 720);
+        bg.updateHitbox();
+        bg.antialiasing = ClientPrefs.data.antialiasing;
 		bg.screenCenter();
 		add(bg);
 
@@ -113,6 +113,7 @@ class OptionsState extends MusicBeatState
 	var exiting = false;
 	override function update(elapsed:Float) {
 		super.update(elapsed);
+		bg.x -= 9 * elapsed;
 
 		if(!exiting) {
 			if (controls.UI_UP_P)
