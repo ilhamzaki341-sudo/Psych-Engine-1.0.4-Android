@@ -312,9 +312,11 @@ class TitleState extends MusicBeatState
 	
 					if (titleJSON.backgroundSprite != null && titleJSON.backgroundSprite.trim().length > 0)
 					{
-						bg = new FlxBackdrop(null, X).loadGraphic(Paths.image(titleJSON.backgroundSprite));
-						bg.antialiasing = ClientPrefs.data.antialiasing;
-						add(bg);
+                        bg = new FlxBackdrop(Paths.image(titleJSON.backgroundSprite), X);
+                        bg.setGraphicSize(1280, 720);
+                        bg.updateHitbox();
+                        bg.antialiasing = ClientPrefs.data.antialiasing;
+                        add(bg);
 					}
 				}
 				catch(e:haxe.Exception)
