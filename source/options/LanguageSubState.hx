@@ -1,6 +1,7 @@
 package options;
 
 import openfl.utils.Assets;
+import flixel.addons.display.FlxBackdrop;
 
 class LanguageSubState extends MusicBeatSubstate
 {
@@ -9,15 +10,17 @@ class LanguageSubState extends MusicBeatSubstate
 	var languages:Array<String> = [];
 	var displayLanguages:Map<String, String> = [];
 	var curSelected:Int = 0;
+	var menuBG:FlxBackdrop;
 	public function new()
 	{
 		super();
 
-		var bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
-		bg.color = 0xFFea71fd;
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.screenCenter();
-		add(bg);
+        menuBG = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        menuBG.setGraphicSize(1280, 720);
+        menuBG.updateHitbox();
+        menuBG.antialiasing = ClientPrefs.data.antialiasing;
+		menuBG.screenCenter();
+        add(menuBG);
 		add(grpLanguages);
 
 		languages.push(ClientPrefs.defaultData.language); //English (US)
