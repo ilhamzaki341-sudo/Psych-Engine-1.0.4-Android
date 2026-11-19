@@ -37,6 +37,7 @@ class FreeplayState extends MusicBeatState
 	var intendedRating:Float = 0;
 
 	private var grpSongs:FlxTypedGroup<Alphabet>;
+	private var grpBars:FlxTypedGroup<FlxSprite>;
 	private var curPlaying:Bool = false;
 
 	private var iconArray:Array<HealthIcon> = [];
@@ -105,6 +106,9 @@ class FreeplayState extends MusicBeatState
         songFrame.antialiasing = ClientPrefs.data.antialiasing;
         add(songFrame);
 		
+		grpBars = new FlxTypedGroup<FlxSprite>();
+        add(grpBars);
+		
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
 
@@ -134,7 +138,12 @@ class FreeplayState extends MusicBeatState
 			// songText.screenCenter(X);
 		}
 		WeekData.setDirectoryFromWeek();
-
+		
+        var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/freeplay/card'));
+        bar.antialiasing = ClientPrefs.data.antialiasing;
+        bar.ID = i;
+        grpBars.add(bar);
+		
 		scoreText = new FlxText(FlxG.width * 0.7, 5, 0, "", 32);
 		scoreText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, RIGHT);
 
@@ -458,7 +467,18 @@ class FreeplayState extends MusicBeatState
 			removeTouchPad();
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
-
+		
+		grpBars.forEach(function(bar:FlxSprite)
+						{
+							var targetSong:Alphabet = grpSongs.members[bar.ID];
+							if (targetSong != null)
+							{
+								bar.x = targetSong.x - 40;
+								bar.y = targetSong.y + (targetSong.height / 2) - (bar.height / 2);
+								bar.alpha = (bar.ID == curSelected) ? 1 : 0.6;
+							}
+						});
+		
 		updateTexts(elapsed);
 		super.update(elapsed);
 	}
