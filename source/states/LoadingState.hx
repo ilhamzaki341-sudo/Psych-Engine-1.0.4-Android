@@ -138,11 +138,10 @@ class LoadingState extends MusicBeatState
 		#end
 
 		#if PSYCH_WATERMARKS // PSYCH LOADING SCREEN
-		var bg = new FlxBackdrop(null, X).loadGraphic(Paths.image('menu/common/starFG'));
-		bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.setGraphicSize(Std.int(FlxG.width));
-		bg.color = 0xFFD16FFF;
-		bg.updateHitbox();
+        bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+        bg.setGraphicSize(1280, 720);
+        bg.updateHitbox();
+        bg.antialiasing = ClientPrefs.data.antialiasing;
 		addBehindBar(bg);
 	
 		loadingText = new FlxText(520, 600, 400, Language.getPhrase('now_loading', 'Now Loading', ['...']), 32);
