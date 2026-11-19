@@ -40,7 +40,7 @@ class AchievementsMenuState extends MusicBeatState
 		camFollow = new FlxObject(0, 0, 1, 1);
 		add(camFollow);
 
-		var menuBG:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menuBGBlue'));
+		var menuBG:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.setGraphicSize(Std.int(menuBG.width * 1.1));
 		menuBG.updateHitbox();
@@ -316,6 +316,7 @@ class ResetAchievementSubstate extends MusicBeatSubstate
 			return;
 		}
 
+		menuBG.x -= 9 * elapsed;
 		super.update(elapsed);
 
 		if(controls.UI_LEFT_P || controls.UI_RIGHT_P) {
