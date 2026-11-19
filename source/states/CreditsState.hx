@@ -25,7 +25,7 @@ class CreditsState extends MusicBeatState
 		#end
 
 		persistentUpdate = true;
-		bg = new FlxSprite().loadGraphic(Paths.image('menuDesat'));
+		bg = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'));
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 		bg.screenCenter();
@@ -147,6 +147,7 @@ class CreditsState extends MusicBeatState
 			FlxG.sound.music.volume += 0.5 * elapsed;
 		}
 
+		bg.x -= 9 * elapsed;
 		if(!quitting)
 		{
 			if(creditsStuff.length > 1)
