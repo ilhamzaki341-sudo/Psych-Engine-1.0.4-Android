@@ -18,7 +18,7 @@ import lime.utils.Assets;
 
 class ModsMenuState extends MusicBeatState
 {
-	var bg:FlxSprite;
+	var bg:FlxBackdrop;
 	var icon:FlxSprite;
 	var modName:Alphabet;
 	var modDesc:FlxText;
