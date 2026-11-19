@@ -118,31 +118,30 @@ class FreeplayState extends MusicBeatState
 			songText.targetY = i;
 			grpSongs.add(songText);
 
-			songText.scaleX = Math.min(1, 980 / songText.width);
+			var targetScale:Float = Math.min(0.7, 400 / songText.width);
+            songText.scaleX = targetScale;
+            songText.scaleY = targetScale;
+			
 			songText.snapToPosition();
-
+		
+			var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/freeplay/card'));
+			bar.antialiasing = ClientPrefs.data.antialiasing;
+			bar.ID = i;
+			grpBars.add(bar);
+			
 			Mods.currentModDirectory = songs[i].folder;
 			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
 			icon.sprTracker = songText;
+			icon.scale.set(0.75, 0.75);
 			
-			// too laggy with a lot of songs, so i had to recode the logic for it
 			songText.visible = songText.active = songText.isMenuItem = false;
 			icon.visible = icon.active = false;
 
-			// using a FlxGroup is too much fuss!
 			iconArray.push(icon);
 			add(icon);
 
-			// songText.x += 40;
-			// DONT PUT X IN THE FIRST PARAMETER OF new ALPHABET() !!
-			// songText.screenCenter(X);
 		}
 		WeekData.setDirectoryFromWeek();
-		
-        var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/freeplay/card'));
-        bar.antialiasing = ClientPrefs.data.antialiasing;
-        bar.ID = grpBars.length;
-        grpBars.add(bar);
 		
 		scoreText = new FlxText(FlxG.width * 0.7, 5, 0, "", 32);
 		scoreText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, RIGHT);
