@@ -18,6 +18,7 @@ class AchievementsMenuState extends MusicBeatState
 	public var progressBar:Bar;
 
 	var camFollow:FlxObject;
+	var menuBG:FlxBackdrop;
 
 	var MAX_PER_ROW:Int = 4;
 
@@ -41,7 +42,7 @@ class AchievementsMenuState extends MusicBeatState
 		camFollow = new FlxObject(0, 0, 1, 1);
 		add(camFollow);
 
-		var menuBG:FlxBackdrop = new FlxSprite().loadGraphic(Paths.image('menu/common/starFG'), X);
+		menuBG = new FlxSprite(null, X).loadGraphic(Paths.image('menu/common/starFG'));
 		menuBG.antialiasing = ClientPrefs.data.antialiasing;
 		menuBG.setGraphicSize(Std.int(menuBG.width * 1.1));
 		menuBG.updateHitbox();
