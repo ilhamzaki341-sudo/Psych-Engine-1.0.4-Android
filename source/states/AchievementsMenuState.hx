@@ -18,9 +18,9 @@ class AchievementsMenuState extends MusicBeatState
 	public var progressBar:Bar;
 
 	var camFollow:FlxObject;
-	var menuBG:FlxBackdrop;
 
 	var MAX_PER_ROW:Int = 4;
+	var menuBG:FlxBackdrop;
 
 	override function create()
 	{
