@@ -2,6 +2,7 @@ package states;
 
 import backend.WeekData;
 
+import flixel.addons.display.FlxBackdrop;
 import flixel.input.keyboard.FlxKey;
 import flixel.graphics.frames.FlxAtlasFrames;
 import flixel.graphics.frames.FlxFrame;
@@ -310,7 +311,7 @@ class TitleState extends MusicBeatState
 	
 					if (titleJSON.backgroundSprite != null && titleJSON.backgroundSprite.trim().length > 0)
 					{
-						var bg:FlxSprite = new FlxSprite().loadGraphic(Paths.image(titleJSON.backgroundSprite));
+						var bg:FlxBackdrop = new FlxBackdrop(null, X).loadGraphic(Paths.image(titleJSON.backgroundSprite));
 						bg.antialiasing = ClientPrefs.data.antialiasing;
 						add(bg);
 					}
