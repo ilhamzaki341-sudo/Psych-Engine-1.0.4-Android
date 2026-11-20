@@ -1,13 +1,11 @@
 package debug;
 
-import flixel.FlxG;
 import haxe.Timer;
 import openfl.display.Sprite;
-import openfl.events.Event;
 import openfl.text.TextField;
 import openfl.text.TextFormat;
 import openfl.system.System;
-import openfl.utils.Assets;
+import flixel.FlxG;
 import flixel.util.FlxStringUtil;
 #if cpp
 import cpp.vm.Gc;
@@ -17,14 +15,14 @@ class FPSCounter extends Sprite
 {
 	public var currentFPS(default, null):Int;
 	public var memoryMegas(get, never):Float;
-	public var taskMemoryMegas(get, never):Float;
-
-	private var textField:TextField;
-	private var bgSprite:Sprite;
 
 	@:noCompletion private var times:Array<Float>;
+	@:noCompletion private var skippedFrames:Int = 0;
 
-	public function new(x:Float = 10, y:Float = 3, color:Int = 0xFFFFFFFF)
+	public var textField:TextField;
+	public var bgSprite:Sprite;
+
+	public function new(x:Float = 10, y:Float = 3, color:Int = 0xFFFFFF)
 	{
 		super();
 
@@ -38,91 +36,96 @@ class FPSCounter extends Sprite
 		addChild(bgSprite);
 
 		textField = new TextField();
+		textField.x = 6;
+		textField.y = 2;
 		textField.selectable = false;
 		textField.mouseEnabled = false;
-		textField.defaultTextFormat = new TextFormat("_sans", 12, color);
+		textField.defaultTextFormat = new TextFormat("_sans", 13, color, true);
 		textField.autoSize = LEFT;
 		textField.multiline = false;
 		textField.text = "FPS: 0";
-		textField.x = 6;
-		textField.y = 2;
 		addChild(textField);
 
-		#if flash
-		addEventListener(Event.ENTER_FRAME, function(e)
-		{
-			var time = Lib.getTimer();
-			__enterFrame(time - currentTime);
-		});
-		#end
+		updateBackground();
 	}
 
-	var deltaTimeout:Float = 0.0;
-
-	private function __enterFrame(deltaTime:Float):Void
+	private override function __enterFrame(deltaTime:Float):Void
 	{
-		if (deltaTimeout > 1000)
-		{
-			deltaTimeout = 0.0;
-			return;
-		}
-
-		final now:Float = haxe.Timer.stamp() * 1000;
+		final now:Float = Timer.stamp() * 1000;
 		times.push(now);
 		while (times[0] < now - 1000)
 			times.shift();
 
+		if (skippedFrames < 6)
+		{
+			skippedFrames++;
+			return;
+		}
+		skippedFrames = 0;
+
 		currentFPS = times.length < FlxG.updateFramerate ? times.length : FlxG.updateFramerate;
 		updateText();
-		deltaTimeout += deltaTime;
 	}
 
 	public dynamic function updateText():Void
 	{
-		var stateName:String = "UnknownState";
-		if (FlxG.state != null)
-		{
-			stateName = Type.getClassName(Type.getClass(FlxG.state));
-			if (stateName != null && !StringTools.startsWith(stateName, "funkin."))
-				stateName = "funkin." + stateName;
-		}
+		var gcMem:Float = 0;
+		#if cpp
+		gcMem = Gc.memInfo64(Gc.MEM_INFO_USAGE);
+		#else
+		gcMem = System.totalMemory;
+		#end
+		var taskMem:Float = memoryMegas;
 
-		var gcMemStr:String = FlxStringUtil.formatBytes(memoryMegas);
-		var taskMemStr:String = FlxStringUtil.formatBytes(taskMemoryMegas);
+		var gcStr:String = FlxStringUtil.formatBytes(gcMem);
+		var taskStr:String = FlxStringUtil.formatBytes(taskMem);
+		var stateName:String = getFormattedStateName();
 
-		textField.text = 'FPS: ' + currentFPS + ' • [GC: ' + gcMemStr + ' | Task: ' + taskMemStr + '] • ' + stateName;
+		textField.text = 'FPS: $currentFPS • [GC: $gcStr | Task: $taskStr] • $stateName';
+		textField.textColor = (currentFPS < FlxG.drawFramerate / 2) ? 0xFFFF0000 : 0xFFFFFFFF;
 
-		textField.textColor = 0xFFFFFFFF;
-		if (currentFPS < FlxG.drawFramerate * 0.5)
-			textField.textColor = 0xFFFF0000;
-
-		drawBackground();
+		updateBackground();
 	}
 
-	private function drawBackground():Void
+	private function getFormattedStateName():String
 	{
+		if (FlxG.state == null)
+			return "funkin.states.InitState";
+
+		var className:String = Type.getClassName(Type.getClass(FlxG.state));
+		if (className == null || className.length == 0)
+			return "funkin.states.UnknownState";
+
+		if (StringTools.startsWith(className, "states."))
+			return "funkin." + className;
+
+		if (className.indexOf(".") == -1)
+			return "funkin.states." + className;
+
+		return className;
+	}
+
+	private function updateBackground():Void
+	{
+		if (bgSprite == null || textField == null)
+			return;
+
+		var w:Float = textField.textWidth + 14;
+		var h:Float = textField.textHeight + 6;
+
 		bgSprite.graphics.clear();
-		bgSprite.graphics.beginFill(0x000000, 0.65);
-		bgSprite.graphics.drawRoundRect(0, 0, textField.width + 12, textField.height + 4, 6, 6);
+		bgSprite.graphics.beginFill(0x000000, 0.55);
+		bgSprite.graphics.drawRoundRect(0, 0, w, h, 4, 4);
 		bgSprite.graphics.endFill();
 	}
 
-	inline function get_memoryMegas():Float
+	public inline function positionFPS(X:Float, Y:Float, ?scale:Float = 1):Void
 	{
-		#if cpp
-		return cast(Gc.memInfo64(Gc.MEM_INFO_USAGE), Float);
-		#else
-		return cast(System.totalMemory, Float);
-		#end
+		scaleX = scaleY = #if android (scale > 1 ? scale : 1) #else (scale < 1 ? scale : 1) #end;
+		x = FlxG.game.x + X;
+		y = FlxG.game.y + Y;
 	}
 
-	inline function get_taskMemoryMegas():Float
-	{
-		#if cpp
-		var reserved:Float = cast(Gc.memInfo64(Gc.MEM_INFO_RESERVED), Float);
-		return reserved > 0 ? reserved : cast(System.totalMemory, Float);
-		#else
-		return cast(System.totalMemory, Float);
-		#end
-	}
+	inline function get_memoryMegas():Float
+		return cpp.vm.Gc.memInfo64(cpp.vm.Gc.MEM_INFO_USAGE);
 }
