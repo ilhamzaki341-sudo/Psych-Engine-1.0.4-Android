@@ -69,6 +69,7 @@ class FreeplayState extends MusicBeatState
 	var lastTouchX:Float = 0;
 	var lastTouchY:Float = 0;
 	var isSwiping:Bool = false;
+	var hasDragged:Bool = false;
 
 	var freeplayCreditsMap:Map<String, String> = new Map();
 
@@ -126,9 +127,8 @@ class FreeplayState extends MusicBeatState
 		}
 		else
 		{
-			glowBG.makeGraphic(1280, 720, FlxColor.WHITE);
+			glowBG.makeGraphic(650, 650, FlxColor.WHITE);
 		}
-		glowBG.setGraphicSize(1280, 720);
 		glowBG.updateHitbox();
 		glowBG.x = FlxG.width - glowBG.width;
 		glowBG.y = FlxG.height - glowBG.height;
@@ -270,6 +270,7 @@ class FreeplayState extends MusicBeatState
 		changeSelection();
 		updateTexts(0);
 
+		FlxG.mouse.visible = true;
 		addTouchPad('NONE', 'A_B_C_X_Y_Z');
 		super.create();
 	}
@@ -462,6 +463,7 @@ class FreeplayState extends MusicBeatState
 						lastTouchX = touch.screenX;
 						lastTouchY = touch.screenY;
 						isSwiping = true;
+						hasDragged = false;
 					}
 					else if (touch.pressed && isSwiping)
 					{
@@ -472,6 +474,7 @@ class FreeplayState extends MusicBeatState
 							changeSelection(dy < 0 ? 1 : -1);
 							lastTouchY = touch.screenY;
 							lastTouchX = touch.screenX;
+							hasDragged = true;
 						}
 						else if (Math.abs(dx) > 65)
 						{
@@ -479,6 +482,7 @@ class FreeplayState extends MusicBeatState
 							_updateSongLastDifficulty();
 							lastTouchX = touch.screenX;
 							lastTouchY = touch.screenY;
+							hasDragged = true;
 						}
 					}
 					else if (touch.justReleased)
@@ -522,6 +526,27 @@ class FreeplayState extends MusicBeatState
 				persistentUpdate = false;
 				FlxG.sound.play(Paths.sound('cancelMenu'));
 				MusicBeatState.switchState(new MainMenuState());
+			}
+		}
+
+		if (!player.playingMusic && FlxG.mouse.justReleased && !hasDragged)
+		{
+			for (i in _lastVisibles)
+			{
+				var card:FlxSprite = grpCards.members[i];
+				if (card != null && card.visible && FlxG.mouse.overlaps(card))
+				{
+					if (i == curSelected)
+					{
+						confirmSong();
+					}
+					else
+					{
+						changeSelection(i - curSelected);
+						holdTime = 0;
+					}
+					break;
+				}
 			}
 		}
 
@@ -605,52 +630,7 @@ class FreeplayState extends MusicBeatState
 		}
 		else if (controls.ACCEPT && !player.playingMusic)
 		{
-			persistentUpdate = false;
-			var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
-			var poop:String = Highscore.formatSong(songLowercase, curDifficulty);
-
-			try
-			{
-				Song.loadFromJson(poop, songLowercase);
-				PlayState.isStoryMode = false;
-				PlayState.storyDifficulty = curDifficulty;
-
-				trace('CURRENT WEEK: ' + WeekData.getWeekFileName());
-			}
-			catch(e:haxe.Exception)
-			{
-				trace('ERROR! ${e.message}');
-
-				var errorStr:String = e.message;
-				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
-				else errorStr += '\n\n' + e.stack;
-
-				missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
-				missingText.screenCenter(Y);
-				missingText.visible = true;
-				missingTextBG.visible = true;
-				FlxG.sound.play(Paths.sound('cancelMenu'));
-
-				updateTexts(elapsed);
-				super.update(elapsed);
-				return;
-			}
-
-			@:privateAccess
-			if(PlayState._lastLoadedModDirectory != Mods.currentModDirectory)
-			{
-				trace('CHANGED MOD DIRECTORY, RELOADING STUFF');
-				Paths.freeGraphicsFromMemory();
-			}
-			LoadingState.prepareToSong();
-			LoadingState.loadAndSwitchState(new PlayState());
-			#if !SHOW_LOADING_SCREEN FlxG.sound.music.stop(); #end
-			stopMusicPlay = true;
-
-			destroyFreeplayVocals();
-			#if (MODS_ALLOWED && DISCORD_ALLOWED)
-			DiscordClient.loadModRPC();
-			#end
+			confirmSong();
 		}
 		else if((controls.RESET || touchPad.buttonY.justPressed) && !player.playingMusic)
 		{
@@ -662,6 +642,53 @@ class FreeplayState extends MusicBeatState
 		
 		updateTexts(elapsed);
 		super.update(elapsed);
+	}
+
+	function confirmSong()
+	{
+		persistentUpdate = false;
+		var songLowercase:String = Paths.formatToSongPath(songs[curSelected].songName);
+		var poop:String = Highscore.formatSong(songLowercase, curDifficulty);
+
+		try
+		{
+			Song.loadFromJson(poop, songLowercase);
+			PlayState.isStoryMode = false;
+			PlayState.storyDifficulty = curDifficulty;
+
+			trace('CURRENT WEEK: ' + WeekData.getWeekFileName());
+		}
+		catch(e:haxe.Exception)
+		{
+			trace('ERROR! ${e.message}');
+
+			var errorStr:String = e.message;
+			if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
+			else errorStr += '\n\n' + e.stack;
+
+			missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
+			missingText.screenCenter(Y);
+			missingText.visible = true;
+			missingTextBG.visible = true;
+			FlxG.sound.play(Paths.sound('cancelMenu'));
+			return;
+		}
+
+		@:privateAccess
+		if(PlayState._lastLoadedModDirectory != Mods.currentModDirectory)
+		{
+			trace('CHANGED MOD DIRECTORY, RELOADING STUFF');
+			Paths.freeGraphicsFromMemory();
+		}
+		LoadingState.prepareToSong();
+		LoadingState.loadAndSwitchState(new PlayState());
+		#if !SHOW_LOADING_SCREEN FlxG.sound.music.stop(); #end
+		stopMusicPlay = true;
+
+		destroyFreeplayVocals();
+		#if (MODS_ALLOWED && DISCORD_ALLOWED)
+		DiscordClient.loadModRPC();
+		#end
 	}
 	
 	function getVocalFromCharacter(char:String)
@@ -896,14 +923,14 @@ class FreeplayState extends MusicBeatState
 			{
 				icon.visible = icon.active = true;
 				icon.alpha = targetAlpha;
-				icon.scale.set(targetScale * 0.68, targetScale * 0.68);
+				icon.scale.set(targetScale * 0.56, targetScale * 0.56);
 				icon.updateHitbox();
-				icon.x = card.x + (14 * targetScale);
+				icon.x = card.x + (18 * targetScale);
 				icon.y = card.y + (card.height - icon.height) / 2;
 			}
 
 			var hasCredit:Bool = (credit != null && credit.text != null && credit.text.length > 0);
-			var textStartX:Float = card.x + (116 * targetScale);
+			var textStartX:Float = card.x + (128 * targetScale);
 
 			item.visible = item.active = true;
 			item.alpha = targetAlpha;
