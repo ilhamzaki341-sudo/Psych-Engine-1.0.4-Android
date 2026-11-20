@@ -55,8 +55,9 @@ class FreeplayState extends MusicBeatState
 
 	var player:MusicPlayer;
 
-	// Jarak vertikal antar judul lagu ala VS Impostor: Legacy
-	var spacingY:Float = 128;
+	// Jarak vertikal dan kemiringan tangga ala VS Impostor: Legacy
+	var spacingY:Float = 135;
+	var stepX:Float = 28;
 
 	// Variabel bantu touch swipe untuk Flixel
 	var lastTouchY:Float = 0;
@@ -64,15 +65,11 @@ class FreeplayState extends MusicBeatState
 
 	override function create()
 	{
-		//Paths.clearStoredMemory();
-		//Paths.clearUnusedMemory();
-		
 		persistentUpdate = true;
 		PlayState.isStoryMode = false;
 		WeekData.reloadWeekFiles(false);
 
 		#if DISCORD_ALLOWED
-		// Updating Discord Rich Presence
 		DiscordClient.changePresence("In the Menus", null);
 		#end
 
@@ -118,13 +115,13 @@ class FreeplayState extends MusicBeatState
 
 		for (i in 0...songs.length)
 		{
-			var songText:Alphabet = new Alphabet(165, 320, songs[i].songName, true);
+			var songText:Alphabet = new Alphabet(90, 320, songs[i].songName, true);
 			songText.targetY = i;
 			songText.changeX = false;
 			songText.changeY = false;
 			grpSongs.add(songText);
 
-			songText.scaleX = Math.min(0.85, 520 / songText.width);
+			songText.scaleX = Math.min(1, 680 / songText.width);
 			songText.snapToPosition();
 
 			Mods.currentModDirectory = songs[i].folder;
@@ -139,23 +136,24 @@ class FreeplayState extends MusicBeatState
 		}
 		WeekData.setDirectoryFromWeek();
 		
-		scoreBG = new FlxSprite(FlxG.width - 360, 12).makeGraphic(345, 118, 0xFF000000);
-		scoreBG.alpha = 0.55;
+		// Kotak Score, Accuracy, dan Difficulty di pojok kanan atas (lebar field penuh & anti-potong saat skor jutaan)
+		scoreBG = new FlxSprite(FlxG.width - 340, 0).makeGraphic(1, 108, 0xFF000000);
+		scoreBG.alpha = 0.6;
 		add(scoreBG);
 
-		scoreText = new FlxText(FlxG.width - 360, 18, 340, "", 28);
-		scoreText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		scoreText.borderSize = 2;
+		scoreText = new FlxText(0, 6, FlxG.width, "", 28);
+		scoreText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT);
+		scoreText.wordWrap = false;
 		add(scoreText);
 
-		accuracyText = new FlxText(FlxG.width - 360, 52, 340, "", 28);
-		accuracyText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		accuracyText.borderSize = 2;
+		accuracyText = new FlxText(0, scoreText.y + 32, FlxG.width, "", 26);
+		accuracyText.setFormat(Paths.font("vcr.ttf"), 26, FlxColor.WHITE, RIGHT);
+		accuracyText.wordWrap = false;
 		add(accuracyText);
 
-		diffText = new FlxText(FlxG.width - 360, 90, 340, "", 24);
-		diffText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-		diffText.borderSize = 2;
+		diffText = new FlxText(0, accuracyText.y + 32, FlxG.width, "", 24);
+		diffText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER);
+		diffText.wordWrap = false;
 		add(diffText);
 
 		missingTextBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
@@ -241,10 +239,10 @@ class FreeplayState extends MusicBeatState
 			lerpRating = intendedRating;
 
 		var ratingSplit:Array<String> = Std.string(CoolUtil.floorDecimal(lerpRating * 100, 2)).split('.');
-		if(ratingSplit.length < 2) //No decimals, add an empty space
+		if(ratingSplit.length < 2)
 			ratingSplit.push('');
 		
-		while(ratingSplit[1].length < 2) //Less than 2 decimals in it, add decimals then
+		while(ratingSplit[1].length < 2)
 			ratingSplit[1] += '0';
 
 		var shiftMult:Int = 1;
@@ -252,7 +250,8 @@ class FreeplayState extends MusicBeatState
 
 		if (!player.playingMusic)
 		{
-			scoreText.text = Language.getPhrase('freeplay_score', 'Score: {1}', [formatScore(lerpScore)]);
+			var formattedScore:String = formatScoreCommas(lerpScore);
+			scoreText.text = Language.getPhrase('freeplay_score', 'Score: {1}', [formattedScore]);
 			accuracyText.text = Language.getPhrase('freeplay_accuracy', 'Accuracy: {1}%', [ratingSplit.join('.')]);
 			positionHighscore();
 			
@@ -262,13 +261,13 @@ class FreeplayState extends MusicBeatState
 				{
 					curSelected = 0;
 					changeSelection();
-					holdTime = 0;	
+					holdTime = 0;
 				}
 				else if(FlxG.keys.justPressed.END)
 				{
 					curSelected = songs.length - 1;
 					changeSelection();
-					holdTime = 0;	
+					holdTime = 0;
 				}
 				if (controls.UI_UP_P)
 				{
@@ -456,7 +455,7 @@ class FreeplayState extends MusicBeatState
 				trace('ERROR! ${e.message}');
 
 				var errorStr:String = e.message;
-				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1); //Missing chart
+				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
 				else errorStr += '\n\n' + e.stack;
 
 				missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
@@ -498,21 +497,22 @@ class FreeplayState extends MusicBeatState
 		super.update(elapsed);
 	}
 
-	function formatScore(num:Int):String
+	function formatScoreCommas(val:Int):String
 	{
-		var str:String = Std.string(num);
+		var isNeg:Bool = val < 0;
+		var str:String = Std.string(Math.abs(val));
 		var res:String = "";
 		var count:Int = 0;
 		var i:Int = str.length - 1;
 		while (i >= 0)
 		{
+			if (count > 0 && count % 3 == 0)
+				res = "," + res;
 			res = str.charAt(i) + res;
 			count++;
-			if (count % 3 == 0 && i > 0 && str.charAt(i - 1) != '-')
-				res = "," + res;
 			i--;
 		}
-		return res;
+		return (isNeg ? "-" : "") + res;
 	}
 	
 	function getVocalFromCharacter(char:String)
@@ -551,14 +551,14 @@ class FreeplayState extends MusicBeatState
 		#end
 
 		lastDifficultyName = Difficulty.getString(curDifficulty, false);
-		var displayDiff:String = Difficulty.getString(curDifficulty);
-		var diffKey:String = 'difficulty_' + displayDiff.toLowerCase();
-		var localizedDiff:String = Language.getPhrase(diffKey, displayDiff).toUpperCase();
+		var rawDiff:String = Difficulty.getString(curDifficulty);
+		var diffKey:String = 'difficulty_' + Paths.formatToSongPath(lastDifficultyName);
+		var displayDiff:String = Language.getPhrase(diffKey, rawDiff).toUpperCase();
 
 		if (Difficulty.list.length > 1)
-			diffText.text = '< ' + localizedDiff + ' >';
+			diffText.text = '< ' + displayDiff + ' >';
 		else
-			diffText.text = localizedDiff;
+			diffText.text = displayDiff;
 
 		positionHighscore();
 		missingText.visible = false;
@@ -625,25 +625,23 @@ class FreeplayState extends MusicBeatState
 
 	private function positionHighscore()
 	{
-		var maxW:Float = Math.max(scoreText.textField.textWidth, Math.max(accuracyText.textField.textWidth, diffText.textField.textWidth));
-		var boxW:Float = Math.max(260, maxW + 30);
+		var padX:Float = 14;
+		// Gunakan textField.textWidth agar lebar akurat walau angka skor jutaan (1,234,567)
+		var scoreW:Float = Math.max(scoreText.textField.textWidth + 6, 10);
+		var accW:Float = Math.max(accuracyText.textField.textWidth + 6, 10);
+		var diffW:Float = Math.max(diffText.textField.textWidth + 6, 10);
 
-		scoreBG.setGraphicSize(Std.int(boxW), 118);
+		var maxTextWidth:Float = Math.max(scoreW, Math.max(accW, diffW));
+		var boxWidth:Float = Math.max(240, maxTextWidth + (padX * 2));
+
+		scoreBG.setGraphicSize(Std.int(boxWidth), 108);
 		scoreBG.updateHitbox();
-		scoreBG.x = FlxG.width - boxW - 14;
-		scoreBG.y = 12;
+		scoreBG.x = FlxG.width - scoreBG.width;
 
-		scoreText.fieldWidth = boxW - 20;
-		scoreText.x = scoreBG.x + 10;
-		scoreText.y = scoreBG.y + 8;
-
-		accuracyText.fieldWidth = boxW - 20;
-		accuracyText.x = scoreBG.x + 10;
-		accuracyText.y = scoreBG.y + 42;
-
-		diffText.fieldWidth = boxW - 20;
-		diffText.x = scoreBG.x + 10;
-		diffText.y = scoreBG.y + 80;
+		scoreText.x = -padX;
+		accuracyText.x = -padX;
+		diffText.fieldWidth = scoreBG.width;
+		diffText.x = scoreBG.x;
 	}
 
 	var _drawDistance:Int = 5;
@@ -668,30 +666,29 @@ class FreeplayState extends MusicBeatState
 			var diff:Float = i - lerpSelected;
 			var absDiff:Float = Math.abs(diff);
 
-			var isSelected:Bool = (i == curSelected);
-			var targetItemX:Float = isSelected ? 75 : 42;
-			var currentItemX:Float = (elapsed > 0) ? FlxMath.lerp(item.x, targetItemX, Math.exp(-elapsed * 16)) : targetItemX;
-			var itemY:Float = (FlxG.height * 0.44) + (diff * spacingY);
+			item.visible = item.active = true;
 
-			var targetAlpha:Float = isSelected ? 1.0 : Math.max(0.32, 0.72 - (absDiff * 0.16));
+			item.y = (FlxG.height * 0.45) + (diff * spacingY);
+			var targetX:Float = 215 + (diff * stepX);
+			item.x = (elapsed > 0) ? FlxMath.lerp(item.x, targetX, Math.exp(-elapsed * 14)) : targetX;
+
+			var baseScale:Float = Math.min(1, 680 / item.width);
+			var targetScale:Float = baseScale * (1.0 - Math.min(absDiff * 0.12, 0.35));
+			item.scale.set(targetScale, targetScale);
+
+			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.35, 1.0 - (absDiff * 0.25));
+			item.alpha = targetAlpha;
 
 			if (icon != null)
 			{
 				icon.visible = icon.active = true;
 				icon.alpha = targetAlpha;
-				icon.scale.set(0.82, 0.82);
+				icon.scale.set(targetScale, targetScale);
 				icon.updateHitbox();
-				icon.x = currentItemX;
-				icon.y = itemY - (icon.height * 0.5) + 28;
+
+				icon.x = item.x - icon.width - 14;
+				icon.y = item.y + (item.height - icon.height) / 2;
 			}
-
-			item.visible = item.active = true;
-			item.x = currentItemX + 125;
-			item.y = itemY;
-			item.alpha = targetAlpha;
-
-			var baseScale:Float = Math.min(0.85, 520 / item.width);
-			item.scale.set(baseScale, baseScale);
 			
 			_lastVisibles.push(i);
 		}
@@ -704,7 +701,7 @@ class FreeplayState extends MusicBeatState
 		FlxG.autoPause = ClientPrefs.data.autoPause;
 		if (!FlxG.sound.music.playing && !stopMusicPlay)
 			FlxG.sound.playMusic(Paths.music('freakyMenu'));
-	}	
+	}
 }
 
 class SongMetadata
