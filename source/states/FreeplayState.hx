@@ -13,10 +13,11 @@ import substates.ResetScoreSubState;
 
 import flixel.math.FlxMath;
 import flixel.util.FlxDestroyUtil;
-import flixel.util.FlxColor;
+import openfl.display.BlendMode;
 
 import openfl.utils.Assets;
 #if sys
+import sys.FileSystem;
 import sys.io.File;
 #end
 
@@ -42,16 +43,17 @@ class FreeplayState extends MusicBeatState
 
 	private var grpCards:FlxTypedGroup<FlxSprite>;
 	private var grpSongs:FlxTypedGroup<FlxText>;
+	private var grpNoteIcons:FlxTypedGroup<FlxSprite>;
+	private var grpCredits:FlxTypedGroup<FlxText>;
 	private var curPlaying:Bool = false;
 
 	private var iconArray:Array<HealthIcon> = [];
 
 	var bg:FlxBackdrop;
 	var glowBG:FlxSprite;
+	var glowTween:FlxTween;
 	var songFrame:FlxSprite;
 	var frameTween:FlxTween;
-	var colorTween:FlxTween;
-	var intendedColor:Int = FlxColor.WHITE;
 
 	var missingTextBG:FlxSprite;
 	var missingText:FlxText;
@@ -62,14 +64,13 @@ class FreeplayState extends MusicBeatState
 
 	var player:MusicPlayer;
 
-	// Jarak vertikal antar kartu lagu ala VS Impostor: Legacy
-	var spacingY:Float = 128;
+	var spacingY:Float = 115;
 
-	// Variabel bantu touch swipe untuk Flixel
 	var lastTouchX:Float = 0;
 	var lastTouchY:Float = 0;
 	var isSwiping:Bool = false;
-	var swipeLockedAxis:Int = 0; // 0 = belum dikunci, 1 = vertikal (lagu), 2 = horizontal (diff)
+
+	var freeplayCreditsMap:Map<String, String> = new Map();
 
 	override function create()
 	{
@@ -81,7 +82,6 @@ class FreeplayState extends MusicBeatState
 		WeekData.reloadWeekFiles(false);
 
 		#if DISCORD_ALLOWED
-		// Updating Discord Rich Presence
 		DiscordClient.changePresence("In the Menus", null);
 		#end
 
@@ -111,6 +111,7 @@ class FreeplayState extends MusicBeatState
 		}
 
 		Mods.loadTopMod();
+		loadFreeplayCredits();
 
 		bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
 		bg.setGraphicSize(1280, 720);
@@ -118,17 +119,20 @@ class FreeplayState extends MusicBeatState
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 
-		// Glow di bagian kanan bawah di belakang songFrame (portraits)
 		glowBG = new FlxSprite(0, 0);
 		if (Paths.fileExists('images/menu/freeplay/glow.png', IMAGE))
+		{
 			glowBG.loadGraphic(Paths.image('menu/freeplay/glow'));
+		}
 		else
-			glowBG.makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE);
-		glowBG.setGraphicSize(FlxG.width, FlxG.height);
+		{
+			glowBG.makeGraphic(1280, 720, FlxColor.WHITE);
+		}
+		glowBG.setGraphicSize(1280, 720);
 		glowBG.updateHitbox();
 		glowBG.x = FlxG.width - glowBG.width;
 		glowBG.y = FlxG.height - glowBG.height;
-		glowBG.blend = ADD;
+		glowBG.blend = BlendMode.ADD;
 		glowBG.alpha = 0.85;
 		glowBG.antialiasing = ClientPrefs.data.antialiasing;
 		add(glowBG);
@@ -143,29 +147,67 @@ class FreeplayState extends MusicBeatState
 		grpSongs = new FlxTypedGroup<FlxText>();
 		add(grpSongs);
 
+		grpNoteIcons = new FlxTypedGroup<FlxSprite>();
+		add(grpNoteIcons);
+
+		grpCredits = new FlxTypedGroup<FlxText>();
+		add(grpCredits);
+
+		var hasCardAsset:Bool = Paths.fileExists('images/menu/freeplay/card.png', IMAGE);
+		var hasNoteAsset:Bool = Paths.fileExists('images/menu/freeplay/note.png', IMAGE);
+
 		for (i in 0...songs.length)
 		{
+			Mods.currentModDirectory = songs[i].folder;
+
 			var card:FlxSprite = new FlxSprite(0, 320);
-			if (Paths.fileExists('images/menu/freeplay/card.png', IMAGE))
+			if (hasCardAsset)
+			{
 				card.loadGraphic(Paths.image('menu/freeplay/card'));
+				card.setGraphicSize(490, 96);
+				card.updateHitbox();
+			}
 			else
-				card.makeGraphic(520, 102, 0xFF7FA3A8);
+			{
+				card.makeGraphic(490, 96, 0xFF7B9BA0);
+			}
 			card.antialiasing = ClientPrefs.data.antialiasing;
 			card.visible = card.active = false;
 			grpCards.add(card);
 
-			var songText:FlxText = new FlxText(215, 320, 355, songs[i].songName, 36);
-			songText.setFormat(Paths.font("vcr.ttf"), 36, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			var songText:FlxText = new FlxText(0, 320, 340, songs[i].songName, 34);
+			songText.setFormat(Paths.font("vcr.ttf"), 34, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			songText.borderSize = 2.2;
-			songText.wordWrap = false;
 			songText.antialiasing = ClientPrefs.data.antialiasing;
 			songText.ID = i;
+			songText.visible = songText.active = false;
 			grpSongs.add(songText);
 
-			Mods.currentModDirectory = songs[i].folder;
-			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
+			var creditStr:String = getSongCredit(songs[i]);
 
-			songText.visible = songText.active = false;
+			var noteIcon:FlxSprite = new FlxSprite(0, 320);
+			if (hasNoteAsset)
+			{
+				noteIcon.loadGraphic(Paths.image('menu/freeplay/note'));
+				noteIcon.setGraphicSize(18, 22);
+				noteIcon.updateHitbox();
+			}
+			else
+			{
+				noteIcon.makeGraphic(14, 18, FlxColor.WHITE);
+			}
+			noteIcon.antialiasing = ClientPrefs.data.antialiasing;
+			noteIcon.visible = noteIcon.active = false;
+			grpNoteIcons.add(noteIcon);
+
+			var creditText:FlxText = new FlxText(0, 320, 315, creditStr, 20);
+			creditText.setFormat(Paths.font("vcr.ttf"), 20, 0xFFE8F4F8, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			creditText.borderSize = 1.6;
+			creditText.antialiasing = ClientPrefs.data.antialiasing;
+			creditText.visible = creditText.active = false;
+			grpCredits.add(creditText);
+
+			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
 			icon.visible = icon.active = false;
 
 			iconArray.push(icon);
@@ -232,6 +274,86 @@ class FreeplayState extends MusicBeatState
 		super.create();
 	}
 
+	function loadFreeplayCredits()
+	{
+		freeplayCreditsMap.clear();
+		var pathsToCheck:Array<String> = [
+			Paths.getPath('stages/credits/freeplayCredits.json', TEXT),
+			'assets/stages/credits/freeplayCredits.json'
+		];
+
+		#if MODS_ALLOWED
+		if (Mods.currentModDirectory != null && Mods.currentModDirectory.length > 0)
+			pathsToCheck.unshift(Paths.mods(Mods.currentModDirectory + '/stages/credits/freeplayCredits.json'));
+		pathsToCheck.unshift(Paths.mods('stages/credits/freeplayCredits.json'));
+		#end
+
+		for (p in pathsToCheck)
+		{
+			if (p == null) continue;
+			try
+			{
+				var rawJson:String = null;
+				#if sys
+				if (FileSystem.exists(p))
+					rawJson = File.getContent(p);
+				#end
+				if (rawJson == null && Assets.exists(p))
+					rawJson = Assets.getText(p);
+
+				if (rawJson != null && rawJson.length > 0)
+				{
+					var parsed:Dynamic = Json.parse(rawJson);
+					for (field in Reflect.fields(parsed))
+					{
+						var val:Dynamic = Reflect.field(parsed, field);
+						if (val != null)
+							freeplayCreditsMap.set(Paths.formatToSongPath(field), Std.string(val));
+					}
+					break;
+				}
+			}
+			catch (e:Dynamic) {}
+		}
+	}
+
+	function getSongCredit(meta:SongMetadata):String
+	{
+		var formatted:String = Paths.formatToSongPath(meta.songName);
+		if (freeplayCreditsMap.exists(formatted))
+			return freeplayCreditsMap.get(formatted);
+
+		try
+		{
+			var songPath:String = Paths.json(formatted + '/' + formatted);
+			var rawJson:String = null;
+			#if sys
+			if (FileSystem.exists(songPath))
+				rawJson = File.getContent(songPath);
+			#end
+			if (rawJson == null && Assets.exists(songPath))
+				rawJson = Assets.getText(songPath);
+
+			if (rawJson != null && rawJson.length > 0)
+			{
+				var parsed:Dynamic = Json.parse(rawJson);
+				var songObj:Dynamic = Reflect.hasField(parsed, "song") ? Reflect.field(parsed, "song") : parsed;
+				if (songObj != null)
+				{
+					if (Reflect.hasField(songObj, "composer") && Reflect.field(songObj, "composer") != null)
+						return Std.string(Reflect.field(songObj, "composer"));
+					if (Reflect.hasField(songObj, "credit") && Reflect.field(songObj, "credit") != null)
+						return Std.string(Reflect.field(songObj, "credit"));
+					if (Reflect.hasField(songObj, "credits") && Reflect.field(songObj, "credits") != null)
+						return Std.string(Reflect.field(songObj, "credits"));
+				}
+			}
+		}
+		catch (e:Dynamic) {}
+
+		return "";
+	}
+
 	override function closeSubState()
 	{
 		changeSelection(0, false);
@@ -282,7 +404,7 @@ class FreeplayState extends MusicBeatState
 			ratingSplit[1] += '0';
 
 		var shiftMult:Int = 1;
-		if((FlxG.keys.pressed.SHIFT || (touchPad != null && touchPad.buttonZ.pressed)) && !player.playingMusic) shiftMult = 3;
+		if((FlxG.keys.pressed.SHIFT || touchPad.buttonZ.pressed) && !player.playingMusic) shiftMult = 3;
 
 		if (!player.playingMusic)
 		{
@@ -330,48 +452,42 @@ class FreeplayState extends MusicBeatState
 					FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
 					changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 				}
-			}
 
-			#if mobile
-			var touch = FlxG.touches.getFirst();
-			if (touch != null)
-			{
-				if (touch.justPressed)
+				#if mobile
+				var touch = FlxG.touches.getFirst();
+				if (touch != null)
 				{
-					lastTouchX = touch.screenX;
-					lastTouchY = touch.screenY;
-					isSwiping = true;
-					swipeLockedAxis = 0;
-				}
-				else if (touch.pressed && isSwiping)
-				{
-					var dx:Float = touch.screenX - lastTouchX;
-					var dy:Float = touch.screenY - lastTouchY;
-
-					if (swipeLockedAxis == 0 && (Math.abs(dx) > 25 || Math.abs(dy) > 25))
+					if (touch.justPressed)
 					{
-						swipeLockedAxis = (Math.abs(dy) >= Math.abs(dx)) ? 1 : 2;
-					}
-
-					if (swipeLockedAxis == 1 && Math.abs(dy) > 42 && songs.length > 1)
-					{
-						changeSelection(dy < 0 ? 1 : -1);
-						lastTouchY = touch.screenY;
-					}
-					else if (swipeLockedAxis == 2 && Math.abs(dx) > 55)
-					{
-						changeDiff(dx < 0 ? -1 : 1);
-						_updateSongLastDifficulty();
 						lastTouchX = touch.screenX;
+						lastTouchY = touch.screenY;
+						isSwiping = true;
+					}
+					else if (touch.pressed && isSwiping)
+					{
+						var dx:Float = touch.screenX - lastTouchX;
+						var dy:Float = touch.screenY - lastTouchY;
+						if (Math.abs(dy) > 42)
+						{
+							changeSelection(dy < 0 ? 1 : -1);
+							lastTouchY = touch.screenY;
+							lastTouchX = touch.screenX;
+						}
+						else if (Math.abs(dx) > 65)
+						{
+							changeDiff(dx < 0 ? -1 : 1);
+							_updateSongLastDifficulty();
+							lastTouchX = touch.screenX;
+							lastTouchY = touch.screenY;
+						}
+					}
+					else if (touch.justReleased)
+					{
+						isSwiping = false;
 					}
 				}
-				else if (touch.justReleased)
-				{
-					isSwiping = false;
-					swipeLockedAxis = 0;
-				}
+				#end
 			}
-			#end
 
 			if (controls.UI_LEFT_P)
 			{
@@ -409,13 +525,13 @@ class FreeplayState extends MusicBeatState
 			}
 		}
 
-		if((FlxG.keys.justPressed.CONTROL || (touchPad != null && touchPad.buttonC.justPressed)) && !player.playingMusic)
+		if((FlxG.keys.justPressed.CONTROL || touchPad.buttonC.justPressed) && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			openSubState(new GameplayChangersSubstate());
 			removeTouchPad();
 		}
-		else if(FlxG.keys.justPressed.SPACE || (touchPad != null && touchPad.buttonX.justPressed))
+		else if(FlxG.keys.justPressed.SPACE || touchPad.buttonX.justPressed)
 		{
 			if(instPlaying != curSelected && !player.playingMusic)
 			{
@@ -536,7 +652,7 @@ class FreeplayState extends MusicBeatState
 			DiscordClient.loadModRPC();
 			#end
 		}
-		else if((controls.RESET || (touchPad != null && touchPad.buttonY.justPressed)) && !player.playingMusic)
+		else if((controls.RESET || touchPad.buttonY.justPressed) && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
@@ -564,24 +680,34 @@ class FreeplayState extends MusicBeatState
 		return null;
 	}
 
-	function getHealthColorFromCharacter(char:String):Int
+	function getHealthColorFromCharacter(char:String):FlxColor
 	{
 		try
 		{
 			var path:String = Paths.getPath('characters/$char.json', TEXT);
+			var rawJson:String = null;
 			#if MODS_ALLOWED
-			var rawJson:String = File.getContent(path);
-			#else
-			var rawJson:String = Assets.getText(path);
+			if (FileSystem.exists(path))
+				rawJson = File.getContent(path);
 			#end
-			var character:Dynamic = Json.parse(rawJson);
-			if (character != null && character.healthbar_colors != null && character.healthbar_colors.length >= 3)
+			if (rawJson == null && Assets.exists(path))
+				rawJson = Assets.getText(path);
+
+			if (rawJson != null && rawJson.length > 0)
 			{
-				return FlxColor.fromRGB(character.healthbar_colors[0], character.healthbar_colors[1], character.healthbar_colors[2]);
+				var character:Dynamic = Json.parse(rawJson);
+				if (character != null && character.healthbar_colors != null && character.healthbar_colors.length >= 3)
+				{
+					return FlxColor.fromRGB(
+						Std.int(character.healthbar_colors[0]),
+						Std.int(character.healthbar_colors[1]),
+						Std.int(character.healthbar_colors[2])
+					);
+				}
 			}
 		}
 		catch (e:Dynamic) {}
-		return 0xFF66FF33;
+		return 0xFF7B9BA0;
 	}
 
 	public static function destroyFreeplayVocals() {
@@ -629,19 +755,17 @@ class FreeplayState extends MusicBeatState
 
 		Mods.currentModDirectory = songs[curSelected].folder;
 
-		// Warna glow dari healthbar_colors karakter di karakter.json
-		var newColor:Int = getHealthColorFromCharacter(songs[curSelected].songCharacter);
-		if (newColor != intendedColor)
+		var targetGlowColor:FlxColor = getHealthColorFromCharacter(songs[curSelected].songCharacter);
+		if (glowTween != null)
 		{
-			if (colorTween != null)
-				colorTween.cancel();
-			intendedColor = newColor;
-			colorTween = FlxTween.color(glowBG, 0.35, glowBG.color, intendedColor, {
-				onComplete: function(twn:FlxTween) {
-					colorTween = null;
-				}
-			});
+			glowTween.cancel();
 		}
+		glowTween = FlxTween.color(glowBG, 0.35, glowBG.color, targetGlowColor, {
+			ease: FlxEase.quartOut,
+			onComplete: function(twn:FlxTween) {
+				glowTween = null;
+			}
+		});
 
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
 		var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
@@ -734,6 +858,8 @@ class FreeplayState extends MusicBeatState
 		{
 			if (grpCards.members[i] != null) grpCards.members[i].visible = grpCards.members[i].active = false;
 			if (grpSongs.members[i] != null) grpSongs.members[i].visible = grpSongs.members[i].active = false;
+			if (grpNoteIcons.members[i] != null) grpNoteIcons.members[i].visible = grpNoteIcons.members[i].active = false;
+			if (grpCredits.members[i] != null) grpCredits.members[i].visible = grpCredits.members[i].active = false;
 			if (iconArray[i] != null) iconArray[i].visible = iconArray[i].active = false;
 		}
 		_lastVisibles = [];
@@ -744,48 +870,74 @@ class FreeplayState extends MusicBeatState
 		{
 			var card:FlxSprite = grpCards.members[i];
 			var item:FlxText = grpSongs.members[i];
+			var noteIcon:FlxSprite = grpNoteIcons.members[i];
+			var credit:FlxText = grpCredits.members[i];
 			var icon:HealthIcon = iconArray[i];
 
 			var diff:Float = i - lerpSelected;
 			var absDiff:Float = Math.abs(diff);
 
-			var targetScale:Float = Math.max(0.68, 1.0 - (absDiff * 0.1));
-			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.4, 1.0 - (absDiff * 0.22));
+			var targetScale:Float = Math.max(0.65, 1.0 - (absDiff * 0.1));
+			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.45, 1.0 - (absDiff * 0.22));
 
-			// Lengkungan C-curve khas VS Impostor: Legacy
-			var cardTargetY:Float = (FlxG.height * 0.5) + (diff * spacingY);
-			var cardTargetX:Float = 95 - (Math.pow(absDiff, 1.35) * 42);
+			var centerY:Float = (FlxG.height * 0.47) + (diff * spacingY);
+			var targetCardX:Float = 95 - (Math.pow(absDiff, 1.35) * 42);
 
-			if (card != null)
-			{
-				card.visible = card.active = true;
-				card.alpha = targetAlpha;
-				card.scale.set(targetScale, targetScale);
-				card.updateHitbox();
+			card.visible = card.active = true;
+			card.scale.set(targetScale, targetScale);
+			card.updateHitbox();
+			card.alpha = targetAlpha;
 
-				var alignedY:Float = cardTargetY - (card.height / 2);
-				card.x = (elapsed > 0) ? FlxMath.lerp(card.x, cardTargetX, Math.exp(-elapsed * 14)) : cardTargetX;
-				card.y = (elapsed > 0) ? FlxMath.lerp(card.y, alignedY, Math.exp(-elapsed * 14)) : alignedY;
-			}
+			var targetCardY:Float = centerY - (card.height / 2);
+			card.x = (elapsed > 0) ? FlxMath.lerp(card.x, targetCardX, Math.exp(-elapsed * 14)) : targetCardX;
+			card.y = (elapsed > 0) ? FlxMath.lerp(card.y, targetCardY, Math.exp(-elapsed * 14)) : targetCardY;
 
-			if (icon != null && card != null)
+			if (icon != null)
 			{
 				icon.visible = icon.active = true;
 				icon.alpha = targetAlpha;
-				icon.scale.set(targetScale * 0.78, targetScale * 0.78);
+				icon.scale.set(targetScale * 0.68, targetScale * 0.68);
 				icon.updateHitbox();
-				icon.x = card.x + (18 * targetScale);
+				icon.x = card.x + (14 * targetScale);
 				icon.y = card.y + (card.height - icon.height) / 2;
 			}
 
-			if (item != null && card != null)
-			{
-				item.visible = item.active = true;
-				item.alpha = targetAlpha;
-				item.scale.set(targetScale, targetScale);
-				item.updateHitbox();
-				item.x = card.x + (142 * targetScale);
+			var hasCredit:Bool = (credit != null && credit.text != null && credit.text.length > 0);
+			var textStartX:Float = card.x + (116 * targetScale);
+
+			item.visible = item.active = true;
+			item.alpha = targetAlpha;
+			item.scale.set(targetScale, targetScale);
+			item.updateHitbox();
+			item.x = textStartX;
+			if (hasCredit)
+				item.y = card.y + (16 * targetScale);
+			else
 				item.y = card.y + (card.height - item.height) / 2;
+
+			if (credit != null && noteIcon != null)
+			{
+				if (hasCredit)
+				{
+					noteIcon.visible = noteIcon.active = true;
+					noteIcon.alpha = targetAlpha;
+					noteIcon.scale.set(targetScale, targetScale);
+					noteIcon.updateHitbox();
+					noteIcon.x = textStartX;
+					noteIcon.y = card.y + (55 * targetScale);
+
+					credit.visible = credit.active = true;
+					credit.alpha = targetAlpha;
+					credit.scale.set(targetScale, targetScale);
+					credit.updateHitbox();
+					credit.x = noteIcon.x + noteIcon.width + (6 * targetScale);
+					credit.y = card.y + (54 * targetScale);
+				}
+				else
+				{
+					noteIcon.visible = noteIcon.active = false;
+					credit.visible = credit.active = false;
+				}
 			}
 			
 			_lastVisibles.push(i);
@@ -794,8 +946,6 @@ class FreeplayState extends MusicBeatState
 
 	override function destroy():Void
 	{
-		if (colorTween != null) colorTween.cancel();
-		if (frameTween != null) frameTween.cancel();
 		super.destroy();
 
 		FlxG.autoPause = ClientPrefs.data.autoPause;
