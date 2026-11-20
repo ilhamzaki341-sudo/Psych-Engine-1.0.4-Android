@@ -44,7 +44,7 @@ class FreeplayState extends MusicBeatState
 
 	var bg:FlxBackdrop;
 	var songFrame:FlxSprite;
-    var frameTween:FlxTween;
+	var frameTween:FlxTween;
 
 	var missingTextBG:FlxSprite;
 	var missingText:FlxText;
@@ -54,6 +54,9 @@ class FreeplayState extends MusicBeatState
 	var bottomBG:FlxSprite;
 
 	var player:MusicPlayer;
+
+	// Jarak vertikal antar judul lagu ala VS Impostor: Legacy
+	var spacingY:Float = 135;
 
 	override function create()
 	{
@@ -96,18 +99,18 @@ class FreeplayState extends MusicBeatState
 
 		Mods.loadTopMod();
 
-        bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
-        bg.setGraphicSize(1280, 720);
-        bg.updateHitbox();
-        bg.antialiasing = ClientPrefs.data.antialiasing;
-        add(bg);
+		bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+		bg.setGraphicSize(1280, 720);
+		bg.updateHitbox();
+		bg.antialiasing = ClientPrefs.data.antialiasing;
+		add(bg);
 		
 		songFrame = new FlxSprite(0, 0);
-        songFrame.antialiasing = ClientPrefs.data.antialiasing;
-        add(songFrame);
+		songFrame.antialiasing = ClientPrefs.data.antialiasing;
+		add(songFrame);
 		
 		grpBars = new FlxTypedGroup<FlxSprite>();
-        add(grpBars);
+		add(grpBars);
 		
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
@@ -116,31 +119,22 @@ class FreeplayState extends MusicBeatState
 		{
 			var songText:Alphabet = new Alphabet(90, 320, songs[i].songName, true);
 			songText.targetY = i;
+			songText.changeX = false;
+			songText.changeY = false;
 			grpSongs.add(songText);
 
-			var targetScale:Float = Math.min(0.7, 400 / songText.width);
-            songText.scaleX = targetScale;
-            songText.scaleY = targetScale;
-			
+			songText.scaleX = Math.min(1, 980 / songText.width);
 			songText.snapToPosition();
-		
-			var bar:FlxSprite = new FlxSprite().loadGraphic(Paths.image('menu/freeplay/card'));
-			bar.antialiasing = ClientPrefs.data.antialiasing;
-			bar.ID = i;
-			bar.visible = bar.active = false;
-			grpBars.add(bar);
-			
+
 			Mods.currentModDirectory = songs[i].folder;
 			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
 			icon.sprTracker = songText;
-			icon.scale.set(0.6, 0.6);
-			
+
 			songText.visible = songText.active = songText.isMenuItem = false;
 			icon.visible = icon.active = false;
 
 			iconArray.push(icon);
 			add(icon);
-
 		}
 		WeekData.setDirectoryFromWeek();
 		
@@ -188,8 +182,9 @@ class FreeplayState extends MusicBeatState
 		player = new MusicPlayer(this);
 		add(player);
 		
+		lerpSelected = curSelected;
 		changeSelection();
-		updateTexts();
+		updateTexts(0);
 
 		addTouchPad('LEFT_FULL', 'A_B_C_X_Y_Z');
 		super.create();
@@ -238,10 +233,10 @@ class FreeplayState extends MusicBeatState
 			lerpRating = intendedRating;
 
 		var ratingSplit:Array<String> = Std.string(CoolUtil.floorDecimal(lerpRating * 100, 2)).split('.');
-		if(ratingSplit.length < 2) //No decimals, add an empty space
+		if(ratingSplit.length < 2)
 			ratingSplit.push('');
 		
-		while(ratingSplit[1].length < 2) //Less than 2 decimals in it, add decimals then
+		while(ratingSplit[1].length < 2)
 			ratingSplit[1] += '0';
 
 		var shiftMult:Int = 1;
@@ -292,6 +287,16 @@ class FreeplayState extends MusicBeatState
 					FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
 					changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 				}
+
+				#if mobile
+				for (touch in FlxG.touches.list)
+				{
+					if (touch.justMoved && Math.abs(touch.deltaY) > 18)
+					{
+						changeSelection(touch.deltaY < 0 ? 1 : -1);
+					}
+				}
+				#end
 			}
 
 			if (controls.UI_LEFT_P)
@@ -374,7 +379,6 @@ class FreeplayState extends MusicBeatState
 					opponentVocals = new FlxSound();
 					try
 					{
-						//trace('please work...');
 						var oppVocals:String = getVocalFromCharacter(PlayState.SONG.player2);
 						var loadedVocals = Paths.voices(PlayState.SONG.song, (oppVocals != null && oppVocals.length > 0) ? oppVocals : 'Opponent');
 						
@@ -386,13 +390,11 @@ class FreeplayState extends MusicBeatState
 							opponentVocals.volume = 0.8;
 							opponentVocals.play();
 							opponentVocals.pause();
-							//trace('yaaay!!');
 						}
 						else opponentVocals = FlxDestroyUtil.destroy(opponentVocals);
 					}
 					catch(e:Dynamic)
 					{
-						//trace('FUUUCK');
 						opponentVocals = FlxDestroyUtil.destroy(opponentVocals);
 					}
 				}
@@ -430,7 +432,7 @@ class FreeplayState extends MusicBeatState
 				trace('ERROR! ${e.message}');
 
 				var errorStr:String = e.message;
-				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1); //Missing chart
+				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
 				else errorStr += '\n\n' + e.stack;
 
 				missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
@@ -467,17 +469,6 @@ class FreeplayState extends MusicBeatState
 			removeTouchPad();
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
-		
-		grpBars.forEach(function(bar:FlxSprite)
-						{
-							var targetSong:Alphabet = grpSongs.members[bar.ID];
-							if (targetSong != null)
-							{
-								bar.x = targetSong.x - 40;
-								bar.y = targetSong.y + (targetSong.height / 2) - (bar.height / 2);
-								bar.alpha = (bar.ID == curSelected) ? 1 : 0.6;
-							}
-						});
 		
 		updateTexts(elapsed);
 		super.update(elapsed);
@@ -535,47 +526,36 @@ class FreeplayState extends MusicBeatState
 		if (player.playingMusic)
 			return;
 		
-        curSelected = Std.int(FlxMath.bound(curSelected + change, 0, songs.length - 1));
+		curSelected = Std.int(FlxMath.bound(curSelected + change, 0, songs.length - 1));
 		_updateSongLastDifficulty();
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
-           var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
+		var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
 
-           if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
-             imagePath = 'menu/freeplay/portraits/placeholder';
-           }
-
-           songFrame.loadGraphic(Paths.image(imagePath));
-           songFrame.scale.set(1, 1);
-           songFrame.updateHitbox();
-           songFrame.y = (FlxG.height - songFrame.height) / 2;
-
-           if (frameTween != null) {
-              frameTween.cancel();
-           }
-
-           var targetX:Float = FlxG.width - songFrame.width + 5;
-           songFrame.x = targetX + 150;
-           songFrame.alpha = 0;
-
-           frameTween = FlxTween.tween(songFrame, {x: targetX, alpha: 1}, 0.25, {
-           ease: FlxEase.quartOut,
-           onComplete: function(twn:FlxTween) {
-           frameTween = null;
-          }
-        });
-		for (num => item in grpSongs.members)
-		{
-			var icon:HealthIcon = iconArray[num];
-			item.alpha = 0.6;
-			icon.alpha = 0.6;
-			if (item.targetY == curSelected)
-			{
-				item.alpha = 1;
-				icon.alpha = 1;
-			}
+		if (!Paths.fileExists('images/' + imagePath + '.png', IMAGE)) {
+			imagePath = 'menu/freeplay/portraits/placeholder';
 		}
+
+		songFrame.loadGraphic(Paths.image(imagePath));
+		songFrame.scale.set(1, 1);
+		songFrame.updateHitbox();
+		songFrame.y = (FlxG.height - songFrame.height) / 2;
+
+		if (frameTween != null) {
+			frameTween.cancel();
+		}
+
+		var targetX:Float = FlxG.width - songFrame.width + 5;
+		songFrame.x = targetX + 150;
+		songFrame.alpha = 0;
+
+		frameTween = FlxTween.tween(songFrame, {x: targetX, alpha: 1}, 0.25, {
+			ease: FlxEase.quartOut,
+			onComplete: function(twn:FlxTween) {
+				frameTween = null;
+			}
+		});
 		
 		Mods.currentModDirectory = songs[curSelected].folder;
 		PlayState.storyWeek = songs[curSelected].week;
@@ -608,15 +588,16 @@ class FreeplayState extends MusicBeatState
 		diffText.x -= diffText.width / 2;
 	}
 
-	var _drawDistance:Int = 4;
+	var _drawDistance:Int = 5;
 	var _lastVisibles:Array<Int> = [];
 	public function updateTexts(elapsed:Float = 0.0)
 	{
-		lerpSelected = FlxMath.lerp(curSelected, lerpSelected, Math.exp(-elapsed * 9.6));
+		lerpSelected = FlxMath.lerp(curSelected, lerpSelected, Math.exp(-elapsed * 10.5));
 		for (i in _lastVisibles)
 		{
-			grpSongs.members[i].visible = grpSongs.members[i].active = false;
-			iconArray[i].visible = iconArray[i].active = false;
+			if (grpSongs.members[i] != null) grpSongs.members[i].visible = grpSongs.members[i].active = false;
+			if (iconArray[i] != null) iconArray[i].visible = iconArray[i].active = false;
+			if (grpBars.members[i] != null) grpBars.members[i].visible = grpBars.members[i].active = false;
 		}
 		_lastVisibles = [];
 
@@ -625,17 +606,33 @@ class FreeplayState extends MusicBeatState
 		for (i in min...max)
 		{
 			var item:Alphabet = grpSongs.members[i];
-			item.visible = item.active = true;
-			item.x = ((item.targetY - lerpSelected) * item.distancePerItem.x) + item.startPosition.x;
-			item.y = ((item.targetY - lerpSelected) * 1.3 * item.distancePerItem.y) + item.startPosition.y;
-
 			var icon:HealthIcon = iconArray[i];
-			icon.visible = icon.active = true;
-			
 			var bar:FlxSprite = grpBars.members[i];
-			bar.visible = bar.active = true;
-			bar.x = item.x - 20;
-			bar.y = item.y - 15;
+
+			var diff:Float = i - lerpSelected;
+			var absDiff:Float = Math.abs(diff);
+
+			item.visible = item.active = true;
+
+			// Posisi Y & X ala VS Impostor: Legacy (terpusat di tengah & menjorok ke kanan saat dipilih)
+			item.y = (FlxG.height * 0.45) + (diff * spacingY);
+			var targetX:Float = 100 + (Math.max(0, 1.0 - absDiff) * 55);
+			item.x = (elapsed > 0) ? FlxMath.lerp(item.x, targetX, Math.exp(-elapsed * 14)) : targetX;
+
+			// Efek pembesaran & transparansi pada item yang sedang dipilih
+			var baseScale:Float = Math.min(1, 980 / item.width);
+			var targetScale:Float = baseScale * (1.0 - Math.min(absDiff * 0.12, 0.35));
+			item.scale.set(targetScale, targetScale);
+
+			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.35, 1.0 - (absDiff * 0.25));
+			item.alpha = targetAlpha;
+
+			if (icon != null)
+			{
+				icon.visible = icon.active = true;
+				icon.alpha = targetAlpha;
+				icon.scale.set(targetScale, targetScale);
+			}
 			
 			_lastVisibles.push(i);
 		}
