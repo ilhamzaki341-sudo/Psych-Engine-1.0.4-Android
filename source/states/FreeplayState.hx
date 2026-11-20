@@ -154,7 +154,7 @@ class FreeplayState extends MusicBeatState
 		add(grpCredits);
 
 		var hasCardAsset:Bool = Paths.fileExists('images/menu/freeplay/card.png', IMAGE);
-		var hasNoteAsset:Bool = Paths.fileExists('images/menu/freeplay/note.png', IMAGE);
+		var hasNoteAsset:Bool = Paths.fileExists('images/menu/freeplay/musicNote.png', IMAGE);
 
 		for (i in 0...songs.length)
 		{
@@ -188,7 +188,7 @@ class FreeplayState extends MusicBeatState
 			var noteIcon:FlxSprite = new FlxSprite(0, 320);
 			if (hasNoteAsset)
 			{
-				noteIcon.loadGraphic(Paths.image('menu/freeplay/note'));
+				noteIcon.loadGraphic(Paths.image('menu/freeplay/musicNote'));
 				noteIcon.setGraphicSize(18, 22);
 				noteIcon.updateHitbox();
 			}
