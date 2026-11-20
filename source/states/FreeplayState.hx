@@ -30,6 +30,7 @@ class FreeplayState extends MusicBeatState
 
 	var scoreBG:FlxSprite;
 	var scoreText:FlxText;
+	var accuracyText:FlxText;
 	var diffText:FlxText;
 	var lerpScore:Int = 0;
 	var lerpRating:Float = 0;
@@ -37,7 +38,6 @@ class FreeplayState extends MusicBeatState
 	var intendedRating:Float = 0;
 
 	private var grpSongs:FlxTypedGroup<Alphabet>;
-	private var grpBars:FlxTypedGroup<FlxSprite>;
 	private var curPlaying:Bool = false;
 
 	private var iconArray:Array<HealthIcon> = [];
@@ -56,7 +56,7 @@ class FreeplayState extends MusicBeatState
 	var player:MusicPlayer;
 
 	// Jarak vertikal antar judul lagu ala VS Impostor: Legacy
-	var spacingY:Float = 135;
+	var spacingY:Float = 128;
 
 	// Variabel bantu touch swipe untuk Flixel
 	var lastTouchY:Float = 0;
@@ -113,26 +113,23 @@ class FreeplayState extends MusicBeatState
 		songFrame.antialiasing = ClientPrefs.data.antialiasing;
 		add(songFrame);
 		
-		grpBars = new FlxTypedGroup<FlxSprite>();
-		add(grpBars);
-		
 		grpSongs = new FlxTypedGroup<Alphabet>();
 		add(grpSongs);
 
 		for (i in 0...songs.length)
 		{
-			var songText:Alphabet = new Alphabet(90, 320, songs[i].songName, true);
+			var songText:Alphabet = new Alphabet(165, 320, songs[i].songName, true);
 			songText.targetY = i;
 			songText.changeX = false;
 			songText.changeY = false;
 			grpSongs.add(songText);
 
-			songText.scaleX = Math.min(1, 980 / songText.width);
+			songText.scaleX = Math.min(0.85, 520 / songText.width);
 			songText.snapToPosition();
 
 			Mods.currentModDirectory = songs[i].folder;
 			var icon:HealthIcon = new HealthIcon(songs[i].songCharacter);
-			icon.sprTracker = songText;
+			icon.sprTracker = null;
 
 			songText.visible = songText.active = songText.isMenuItem = false;
 			icon.visible = icon.active = false;
@@ -142,17 +139,24 @@ class FreeplayState extends MusicBeatState
 		}
 		WeekData.setDirectoryFromWeek();
 		
-		scoreText = new FlxText(FlxG.width * 0.7, 5, 0, "", 32);
-		scoreText.setFormat(Paths.font("vcr.ttf"), 32, FlxColor.WHITE, RIGHT);
-
-		scoreBG = new FlxSprite(scoreText.x - 6, 0).makeGraphic(1, 66, 0xFF000000);
-		scoreBG.alpha = 0.6;
+		scoreBG = new FlxSprite(FlxG.width - 360, 12).makeGraphic(345, 118, 0xFF000000);
+		scoreBG.alpha = 0.55;
 		add(scoreBG);
 
-		diffText = new FlxText(scoreText.x, scoreText.y + 36, 0, "", 24);
-		diffText.font = scoreText.font;
-		add(diffText);
+		scoreText = new FlxText(FlxG.width - 360, 18, 340, "", 28);
+		scoreText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		scoreText.borderSize = 2;
 		add(scoreText);
+
+		accuracyText = new FlxText(FlxG.width - 360, 52, 340, "", 28);
+		accuracyText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		accuracyText.borderSize = 2;
+		add(accuracyText);
+
+		diffText = new FlxText(FlxG.width - 360, 90, 340, "", 24);
+		diffText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		diffText.borderSize = 2;
+		add(diffText);
 
 		missingTextBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		missingTextBG.alpha = 0.6;
@@ -248,7 +252,8 @@ class FreeplayState extends MusicBeatState
 
 		if (!player.playingMusic)
 		{
-			scoreText.text = Language.getPhrase('personal_best', 'PERSONAL BEST: {1} ({2}%)', [lerpScore, ratingSplit.join('.')]);
+			scoreText.text = Language.getPhrase('freeplay_score', 'Score: {1}', [formatScore(lerpScore)]);
+			accuracyText.text = Language.getPhrase('freeplay_accuracy', 'Accuracy: {1}%', [ratingSplit.join('.')]);
 			positionHighscore();
 			
 			if(songs.length > 1)
@@ -492,6 +497,23 @@ class FreeplayState extends MusicBeatState
 		updateTexts(elapsed);
 		super.update(elapsed);
 	}
+
+	function formatScore(num:Int):String
+	{
+		var str:String = Std.string(num);
+		var res:String = "";
+		var count:Int = 0;
+		var i:Int = str.length - 1;
+		while (i >= 0)
+		{
+			res = str.charAt(i) + res;
+			count++;
+			if (count % 3 == 0 && i > 0 && str.charAt(i - 1) != '-')
+				res = "," + res;
+			i--;
+		}
+		return res;
+	}
 	
 	function getVocalFromCharacter(char:String)
 	{
@@ -530,10 +552,13 @@ class FreeplayState extends MusicBeatState
 
 		lastDifficultyName = Difficulty.getString(curDifficulty, false);
 		var displayDiff:String = Difficulty.getString(curDifficulty);
+		var diffKey:String = 'difficulty_' + displayDiff.toLowerCase();
+		var localizedDiff:String = Language.getPhrase(diffKey, displayDiff).toUpperCase();
+
 		if (Difficulty.list.length > 1)
-			diffText.text = '< ' + displayDiff.toUpperCase() + ' >';
+			diffText.text = '< ' + localizedDiff + ' >';
 		else
-			diffText.text = displayDiff.toUpperCase();
+			diffText.text = localizedDiff;
 
 		positionHighscore();
 		missingText.visible = false;
@@ -600,11 +625,25 @@ class FreeplayState extends MusicBeatState
 
 	private function positionHighscore()
 	{
-		scoreText.x = FlxG.width - scoreText.width - 6;
-		scoreBG.scale.x = FlxG.width - scoreText.x + 6;
-		scoreBG.x = FlxG.width - (scoreBG.scale.x / 2);
-		diffText.x = Std.int(scoreBG.x + (scoreBG.width / 2));
-		diffText.x -= diffText.width / 2;
+		var maxW:Float = Math.max(scoreText.textField.textWidth, Math.max(accuracyText.textField.textWidth, diffText.textField.textWidth));
+		var boxW:Float = Math.max(260, maxW + 30);
+
+		scoreBG.setGraphicSize(Std.int(boxW), 118);
+		scoreBG.updateHitbox();
+		scoreBG.x = FlxG.width - boxW - 14;
+		scoreBG.y = 12;
+
+		scoreText.fieldWidth = boxW - 20;
+		scoreText.x = scoreBG.x + 10;
+		scoreText.y = scoreBG.y + 8;
+
+		accuracyText.fieldWidth = boxW - 20;
+		accuracyText.x = scoreBG.x + 10;
+		accuracyText.y = scoreBG.y + 42;
+
+		diffText.fieldWidth = boxW - 20;
+		diffText.x = scoreBG.x + 10;
+		diffText.y = scoreBG.y + 80;
 	}
 
 	var _drawDistance:Int = 5;
@@ -616,7 +655,6 @@ class FreeplayState extends MusicBeatState
 		{
 			if (grpSongs.members[i] != null) grpSongs.members[i].visible = grpSongs.members[i].active = false;
 			if (iconArray[i] != null) iconArray[i].visible = iconArray[i].active = false;
-			if (grpBars.members[i] != null) grpBars.members[i].visible = grpBars.members[i].active = false;
 		}
 		_lastVisibles = [];
 
@@ -626,30 +664,34 @@ class FreeplayState extends MusicBeatState
 		{
 			var item:Alphabet = grpSongs.members[i];
 			var icon:HealthIcon = iconArray[i];
-			var bar:FlxSprite = grpBars.members[i];
 
 			var diff:Float = i - lerpSelected;
 			var absDiff:Float = Math.abs(diff);
 
-			item.visible = item.active = true;
+			var isSelected:Bool = (i == curSelected);
+			var targetItemX:Float = isSelected ? 75 : 42;
+			var currentItemX:Float = (elapsed > 0) ? FlxMath.lerp(item.x, targetItemX, Math.exp(-elapsed * 16)) : targetItemX;
+			var itemY:Float = (FlxG.height * 0.44) + (diff * spacingY);
 
-			item.y = (FlxG.height * 0.45) + (diff * spacingY);
-			var targetX:Float = 100 + (Math.max(0, 1.0 - absDiff) * 55);
-			item.x = (elapsed > 0) ? FlxMath.lerp(item.x, targetX, Math.exp(-elapsed * 14)) : targetX;
-
-			var baseScale:Float = Math.min(1, 980 / item.width);
-			var targetScale:Float = baseScale * (1.0 - Math.min(absDiff * 0.12, 0.35));
-			item.scale.set(targetScale, targetScale);
-
-			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.35, 1.0 - (absDiff * 0.25));
-			item.alpha = targetAlpha;
+			var targetAlpha:Float = isSelected ? 1.0 : Math.max(0.32, 0.72 - (absDiff * 0.16));
 
 			if (icon != null)
 			{
 				icon.visible = icon.active = true;
 				icon.alpha = targetAlpha;
-				icon.scale.set(targetScale, targetScale);
+				icon.scale.set(0.82, 0.82);
+				icon.updateHitbox();
+				icon.x = currentItemX;
+				icon.y = itemY - (icon.height * 0.5) + 28;
 			}
+
+			item.visible = item.active = true;
+			item.x = currentItemX + 125;
+			item.y = itemY;
+			item.alpha = targetAlpha;
+
+			var baseScale:Float = Math.min(0.85, 520 / item.width);
+			item.scale.set(baseScale, baseScale);
 			
 			_lastVisibles.push(i);
 		}
