@@ -13,8 +13,12 @@ import substates.ResetScoreSubState;
 
 import flixel.math.FlxMath;
 import flixel.util.FlxDestroyUtil;
+import flixel.util.FlxColor;
 
 import openfl.utils.Assets;
+#if sys
+import sys.io.File;
+#end
 
 import haxe.Json;
 
@@ -36,14 +40,18 @@ class FreeplayState extends MusicBeatState
 	var intendedScore:Int = 0;
 	var intendedRating:Float = 0;
 
+	private var grpCards:FlxTypedGroup<FlxSprite>;
 	private var grpSongs:FlxTypedGroup<FlxText>;
 	private var curPlaying:Bool = false;
 
 	private var iconArray:Array<HealthIcon> = [];
 
 	var bg:FlxBackdrop;
+	var glowBG:FlxSprite;
 	var songFrame:FlxSprite;
 	var frameTween:FlxTween;
+	var colorTween:FlxTween;
+	var intendedColor:Int = FlxColor.WHITE;
 
 	var missingTextBG:FlxSprite;
 	var missingText:FlxText;
@@ -54,23 +62,26 @@ class FreeplayState extends MusicBeatState
 
 	var player:MusicPlayer;
 
-	// Jarak vertikal antar lagu ala VS Impostor: Legacy
-	var spacingY:Float = 115;
+	// Jarak vertikal antar kartu lagu ala VS Impostor: Legacy
+	var spacingY:Float = 128;
 
-	// Variabel bantu touch swipe vertikal & horizontal
-	var startTouchX:Float = 0;
-	var startTouchY:Float = 0;
+	// Variabel bantu touch swipe untuk Flixel
+	var lastTouchX:Float = 0;
 	var lastTouchY:Float = 0;
 	var isSwiping:Bool = false;
-	var swipeMoved:Bool = false;
+	var swipeLockedAxis:Int = 0; // 0 = belum dikunci, 1 = vertikal (lagu), 2 = horizontal (diff)
 
 	override function create()
 	{
+		//Paths.clearStoredMemory();
+		//Paths.clearUnusedMemory();
+		
 		persistentUpdate = true;
 		PlayState.isStoryMode = false;
 		WeekData.reloadWeekFiles(false);
 
 		#if DISCORD_ALLOWED
+		// Updating Discord Rich Presence
 		DiscordClient.changePresence("In the Menus", null);
 		#end
 
@@ -106,20 +117,47 @@ class FreeplayState extends MusicBeatState
 		bg.updateHitbox();
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
+
+		// Glow di bagian kanan bawah di belakang songFrame (portraits)
+		glowBG = new FlxSprite(0, 0);
+		if (Paths.fileExists('images/menu/freeplay/glow.png', IMAGE))
+			glowBG.loadGraphic(Paths.image('menu/freeplay/glow'));
+		else
+			glowBG.makeGraphic(FlxG.width, FlxG.height, FlxColor.WHITE);
+		glowBG.setGraphicSize(FlxG.width, FlxG.height);
+		glowBG.updateHitbox();
+		glowBG.x = FlxG.width - glowBG.width;
+		glowBG.y = FlxG.height - glowBG.height;
+		glowBG.blend = ADD;
+		glowBG.alpha = 0.85;
+		glowBG.antialiasing = ClientPrefs.data.antialiasing;
+		add(glowBG);
 		
 		songFrame = new FlxSprite(0, 0);
 		songFrame.antialiasing = ClientPrefs.data.antialiasing;
 		add(songFrame);
+
+		grpCards = new FlxTypedGroup<FlxSprite>();
+		add(grpCards);
 		
-		// Pakai FlxText murni dengan vcr.ttf (TANPA Alphabet)
 		grpSongs = new FlxTypedGroup<FlxText>();
 		add(grpSongs);
 
 		for (i in 0...songs.length)
 		{
-			var songText:FlxText = new FlxText(200, 320, 0, songs[i].songName, 40);
-			songText.setFormat(Paths.font("vcr.ttf"), 40, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-			songText.borderSize = 2.5;
+			var card:FlxSprite = new FlxSprite(0, 320);
+			if (Paths.fileExists('images/menu/freeplay/card.png', IMAGE))
+				card.loadGraphic(Paths.image('menu/freeplay/card'));
+			else
+				card.makeGraphic(520, 102, 0xFF7FA3A8);
+			card.antialiasing = ClientPrefs.data.antialiasing;
+			card.visible = card.active = false;
+			grpCards.add(card);
+
+			var songText:FlxText = new FlxText(215, 320, 355, songs[i].songName, 36);
+			songText.setFormat(Paths.font("vcr.ttf"), 36, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			songText.borderSize = 2.2;
+			songText.wordWrap = false;
 			songText.antialiasing = ClientPrefs.data.antialiasing;
 			songText.ID = i;
 			grpSongs.add(songText);
@@ -190,7 +228,6 @@ class FreeplayState extends MusicBeatState
 		changeSelection();
 		updateTexts(0);
 
-		// Hilangkan D-Pad arah (NONE), hanya sisakan tombol aksi A B C X Y Z
 		addTouchPad('NONE', 'A_B_C_X_Y_Z');
 		super.create();
 	}
@@ -293,45 +330,48 @@ class FreeplayState extends MusicBeatState
 					FlxG.sound.play(Paths.sound('scrollMenu'), 0.2);
 					changeSelection(-shiftMult * FlxG.mouse.wheel, false);
 				}
+			}
 
-				#if mobile
-				var touch = FlxG.touches.getFirst();
-				if (touch != null)
+			#if mobile
+			var touch = FlxG.touches.getFirst();
+			if (touch != null)
+			{
+				if (touch.justPressed)
 				{
-					if (touch.justPressed)
+					lastTouchX = touch.screenX;
+					lastTouchY = touch.screenY;
+					isSwiping = true;
+					swipeLockedAxis = 0;
+				}
+				else if (touch.pressed && isSwiping)
+				{
+					var dx:Float = touch.screenX - lastTouchX;
+					var dy:Float = touch.screenY - lastTouchY;
+
+					if (swipeLockedAxis == 0 && (Math.abs(dx) > 25 || Math.abs(dy) > 25))
 					{
-						startTouchX = touch.screenX;
-						startTouchY = touch.screenY;
+						swipeLockedAxis = (Math.abs(dy) >= Math.abs(dx)) ? 1 : 2;
+					}
+
+					if (swipeLockedAxis == 1 && Math.abs(dy) > 42 && songs.length > 1)
+					{
+						changeSelection(dy < 0 ? 1 : -1);
 						lastTouchY = touch.screenY;
-						isSwiping = true;
-						swipeMoved = false;
 					}
-					else if (touch.pressed && isSwiping)
+					else if (swipeLockedAxis == 2 && Math.abs(dx) > 55)
 					{
-						var dy:Float = touch.screenY - lastTouchY;
-						if (Math.abs(dy) > 40)
-						{
-							changeSelection(dy < 0 ? 1 : -1);
-							lastTouchY = touch.screenY;
-							swipeMoved = true;
-						}
-					}
-					else if (touch.justReleased && isSwiping)
-					{
-						var totalDx:Float = touch.screenX - startTouchX;
-						var totalDy:Float = touch.screenY - startTouchY;
-						// Geser kiri/kanan dengan jari untuk ganti difficulty
-						if (!swipeMoved && Math.abs(totalDx) > 65 && Math.abs(totalDx) > Math.abs(totalDy))
-						{
-							changeDiff(totalDx < 0 ? 1 : -1);
-							_updateSongLastDifficulty();
-							FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
-						}
-						isSwiping = false;
+						changeDiff(dx < 0 ? -1 : 1);
+						_updateSongLastDifficulty();
+						lastTouchX = touch.screenX;
 					}
 				}
-				#end
+				else if (touch.justReleased)
+				{
+					isSwiping = false;
+					swipeLockedAxis = 0;
+				}
 			}
+			#end
 
 			if (controls.UI_LEFT_P)
 			{
@@ -524,6 +564,26 @@ class FreeplayState extends MusicBeatState
 		return null;
 	}
 
+	function getHealthColorFromCharacter(char:String):Int
+	{
+		try
+		{
+			var path:String = Paths.getPath('characters/$char.json', TEXT);
+			#if MODS_ALLOWED
+			var rawJson:String = File.getContent(path);
+			#else
+			var rawJson:String = Assets.getText(path);
+			#end
+			var character:Dynamic = Json.parse(rawJson);
+			if (character != null && character.healthbar_colors != null && character.healthbar_colors.length >= 3)
+			{
+				return FlxColor.fromRGB(character.healthbar_colors[0], character.healthbar_colors[1], character.healthbar_colors[2]);
+			}
+		}
+		catch (e:Dynamic) {}
+		return 0xFF66FF33;
+	}
+
 	public static function destroyFreeplayVocals() {
 		if(vocals != null) vocals.stop();
 		vocals = FlxDestroyUtil.destroy(vocals);
@@ -567,6 +627,22 @@ class FreeplayState extends MusicBeatState
 		_updateSongLastDifficulty();
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
+		Mods.currentModDirectory = songs[curSelected].folder;
+
+		// Warna glow dari healthbar_colors karakter di karakter.json
+		var newColor:Int = getHealthColorFromCharacter(songs[curSelected].songCharacter);
+		if (newColor != intendedColor)
+		{
+			if (colorTween != null)
+				colorTween.cancel();
+			intendedColor = newColor;
+			colorTween = FlxTween.color(glowBG, 0.35, glowBG.color, intendedColor, {
+				onComplete: function(twn:FlxTween) {
+					colorTween = null;
+				}
+			});
+		}
+
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
 		var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
 
@@ -594,7 +670,6 @@ class FreeplayState extends MusicBeatState
 			}
 		});
 		
-		Mods.currentModDirectory = songs[curSelected].folder;
 		PlayState.storyWeek = songs[curSelected].week;
 		Difficulty.loadFromWeek();
 		
@@ -650,13 +725,14 @@ class FreeplayState extends MusicBeatState
 		diffText.x = scoreBG.x + (scoreBG.width - diffText.width) / 2;
 	}
 
-	var _drawDistance:Int = 6;
+	var _drawDistance:Int = 5;
 	var _lastVisibles:Array<Int> = [];
 	public function updateTexts(elapsed:Float = 0.0)
 	{
 		lerpSelected = FlxMath.lerp(curSelected, lerpSelected, Math.exp(-elapsed * 10.5));
 		for (i in _lastVisibles)
 		{
+			if (grpCards.members[i] != null) grpCards.members[i].visible = grpCards.members[i].active = false;
 			if (grpSongs.members[i] != null) grpSongs.members[i].visible = grpSongs.members[i].active = false;
 			if (iconArray[i] != null) iconArray[i].visible = iconArray[i].active = false;
 		}
@@ -666,37 +742,50 @@ class FreeplayState extends MusicBeatState
 		var max:Int = Math.round(Math.max(0, Math.min(songs.length, lerpSelected + _drawDistance)));
 		for (i in min...max)
 		{
+			var card:FlxSprite = grpCards.members[i];
 			var item:FlxText = grpSongs.members[i];
 			var icon:HealthIcon = iconArray[i];
 
 			var diff:Float = i - lerpSelected;
 			var absDiff:Float = Math.abs(diff);
 
-			item.visible = item.active = true;
+			var targetScale:Float = Math.max(0.68, 1.0 - (absDiff * 0.1));
+			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.4, 1.0 - (absDiff * 0.22));
 
-			// Lengkungan scroll C-curve khas VS Impostor: Legacy
-			// Lagu terpilih menjorok paling kanan (X ~ 230), semakin jauh ke atas atau ke bawah semakin melengkung ke kiri
-			var targetY:Float = (FlxG.height * 0.45) + (diff * spacingY);
-			var targetX:Float = 230 - (Math.pow(absDiff, 1.35) * 42);
+			// Lengkungan C-curve khas VS Impostor: Legacy
+			var cardTargetY:Float = (FlxG.height * 0.5) + (diff * spacingY);
+			var cardTargetX:Float = 95 - (Math.pow(absDiff, 1.35) * 42);
 
-			item.y = (elapsed > 0) ? FlxMath.lerp(item.y, targetY, Math.exp(-elapsed * 14)) : targetY;
-			item.x = (elapsed > 0) ? FlxMath.lerp(item.x, targetX, Math.exp(-elapsed * 14)) : targetX;
+			if (card != null)
+			{
+				card.visible = card.active = true;
+				card.alpha = targetAlpha;
+				card.scale.set(targetScale, targetScale);
+				card.updateHitbox();
 
-			var targetScale:Float = Math.max(0.68, 1.0 - (absDiff * 0.08));
-			item.scale.set(targetScale, targetScale);
-			item.updateHitbox();
+				var alignedY:Float = cardTargetY - (card.height / 2);
+				card.x = (elapsed > 0) ? FlxMath.lerp(card.x, cardTargetX, Math.exp(-elapsed * 14)) : cardTargetX;
+				card.y = (elapsed > 0) ? FlxMath.lerp(card.y, alignedY, Math.exp(-elapsed * 14)) : alignedY;
+			}
 
-			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.35, 1.0 - (absDiff * 0.25));
-			item.alpha = targetAlpha;
-
-			if (icon != null)
+			if (icon != null && card != null)
 			{
 				icon.visible = icon.active = true;
 				icon.alpha = targetAlpha;
-				icon.scale.set(targetScale * 0.85, targetScale * 0.85);
+				icon.scale.set(targetScale * 0.78, targetScale * 0.78);
 				icon.updateHitbox();
-				icon.x = item.x - icon.width - 14;
-				icon.y = item.y + (item.height - icon.height) / 2;
+				icon.x = card.x + (18 * targetScale);
+				icon.y = card.y + (card.height - icon.height) / 2;
+			}
+
+			if (item != null && card != null)
+			{
+				item.visible = item.active = true;
+				item.alpha = targetAlpha;
+				item.scale.set(targetScale, targetScale);
+				item.updateHitbox();
+				item.x = card.x + (142 * targetScale);
+				item.y = card.y + (card.height - item.height) / 2;
 			}
 			
 			_lastVisibles.push(i);
@@ -705,6 +794,8 @@ class FreeplayState extends MusicBeatState
 
 	override function destroy():Void
 	{
+		if (colorTween != null) colorTween.cancel();
+		if (frameTween != null) frameTween.cancel();
 		super.destroy();
 
 		FlxG.autoPause = ClientPrefs.data.autoPause;
