@@ -58,6 +58,10 @@ class FreeplayState extends MusicBeatState
 	// Jarak vertikal antar judul lagu ala VS Impostor: Legacy
 	var spacingY:Float = 135;
 
+	// Variabel bantu touch swipe untuk Flixel
+	var lastTouchY:Float = 0;
+	var isSwiping:Bool = false;
+
 	override function create()
 	{
 		//Paths.clearStoredMemory();
@@ -233,10 +237,10 @@ class FreeplayState extends MusicBeatState
 			lerpRating = intendedRating;
 
 		var ratingSplit:Array<String> = Std.string(CoolUtil.floorDecimal(lerpRating * 100, 2)).split('.');
-		if(ratingSplit.length < 2)
+		if(ratingSplit.length < 2) //No decimals, add an empty space
 			ratingSplit.push('');
 		
-		while(ratingSplit[1].length < 2)
+		while(ratingSplit[1].length < 2) //Less than 2 decimals in it, add decimals then
 			ratingSplit[1] += '0';
 
 		var shiftMult:Int = 1;
@@ -289,11 +293,26 @@ class FreeplayState extends MusicBeatState
 				}
 
 				#if mobile
-				for (touch in FlxG.touches.list)
+				var touch = FlxG.touches.getFirst();
+				if (touch != null)
 				{
-					if (touch.justMoved && Math.abs(touch.deltaY) > 18)
+					if (touch.justPressed)
 					{
-						changeSelection(touch.deltaY < 0 ? 1 : -1);
+						lastTouchY = touch.screenY;
+						isSwiping = true;
+					}
+					else if (touch.pressed && isSwiping)
+					{
+						var dy:Float = touch.screenY - lastTouchY;
+						if (Math.abs(dy) > 45)
+						{
+							changeSelection(dy < 0 ? 1 : -1);
+							lastTouchY = touch.screenY;
+						}
+					}
+					else if (touch.justReleased)
+					{
+						isSwiping = false;
 					}
 				}
 				#end
@@ -432,7 +451,7 @@ class FreeplayState extends MusicBeatState
 				trace('ERROR! ${e.message}');
 
 				var errorStr:String = e.message;
-				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1);
+				if(errorStr.contains('There is no TEXT asset with an ID of')) errorStr = 'Missing file: ' + errorStr.substring(errorStr.indexOf(songLowercase), errorStr.length-1); //Missing chart
 				else errorStr += '\n\n' + e.stack;
 
 				missingText.text = 'ERROR WHILE LOADING CHART:\n$errorStr';
@@ -614,12 +633,10 @@ class FreeplayState extends MusicBeatState
 
 			item.visible = item.active = true;
 
-			// Posisi Y & X ala VS Impostor: Legacy (terpusat di tengah & menjorok ke kanan saat dipilih)
 			item.y = (FlxG.height * 0.45) + (diff * spacingY);
 			var targetX:Float = 100 + (Math.max(0, 1.0 - absDiff) * 55);
 			item.x = (elapsed > 0) ? FlxMath.lerp(item.x, targetX, Math.exp(-elapsed * 14)) : targetX;
 
-			// Efek pembesaran & transparansi pada item yang sedang dipilih
 			var baseScale:Float = Math.min(1, 980 / item.width);
 			var targetScale:Float = baseScale * (1.0 - Math.min(absDiff * 0.12, 0.35));
 			item.scale.set(targetScale, targetScale);
