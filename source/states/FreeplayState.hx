@@ -26,6 +26,7 @@ import haxe.Json;
 
 typedef FreeplayCategory = {
 	var title:String;
+	var fileName:String;
 	var index:Int;
 	var weeks:Array<String>;
 }
@@ -89,11 +90,11 @@ class FreeplayState extends MusicBeatState
 
 	var freeplayCreditsMap:Map<String, String> = new Map();
 
+	var boldFont:String;
+	var regFont:String;
+
 	override function create()
 	{
-		//Paths.clearStoredMemory();
-		//Paths.clearUnusedMemory();
-		
 		persistentUpdate = true;
 		PlayState.isStoryMode = false;
 		WeekData.reloadWeekFiles(false);
@@ -114,6 +115,9 @@ class FreeplayState extends MusicBeatState
 				function() MusicBeatState.switchState(new states.MainMenuState())));
 			return;
 		}
+
+		boldFont = Paths.fileExists('fonts/liberbold.ttf', FONT) ? Paths.font('liberbold.ttf') : Paths.font('vcr.ttf');
+		regFont = Paths.fileExists('fonts/liber.ttf', FONT) ? Paths.font('liber.ttf') : Paths.font('vcr.ttf');
 
 		Mods.loadTopMod();
 		loadFreeplayCategories();
@@ -158,7 +162,7 @@ class FreeplayState extends MusicBeatState
 		add(grpCredits);
 
 		categoryTitleText = new FlxText(560, 125, 420, "", 42);
-		categoryTitleText.setFormat(Paths.font("vcr.ttf"), 42, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		categoryTitleText.setFormat(boldFont, 42, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		categoryTitleText.borderSize = 2.5;
 		categoryTitleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(categoryTitleText);
@@ -200,17 +204,17 @@ class FreeplayState extends MusicBeatState
 		add(scoreBG);
 
 		scoreText = new FlxText(-14, topOffset + 8, FlxG.width, "", 30);
-		scoreText.setFormat(Paths.font("vcr.ttf"), 30, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		scoreText.setFormat(regFont, 30, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		scoreText.borderSize = 1.5;
 		add(scoreText);
 
 		accuracyText = new FlxText(-14, topOffset + 42, FlxG.width, "", 28);
-		accuracyText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		accuracyText.setFormat(regFont, 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		accuracyText.borderSize = 1.5;
 		add(accuracyText);
 
 		diffText = new FlxText(0, topOffset + 76, 0, "", 24);
-		diffText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		diffText.setFormat(boldFont, 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		diffText.borderSize = 1.5;
 		add(diffText);
 
@@ -240,7 +244,7 @@ class FreeplayState extends MusicBeatState
 		add(missingTextBG);
 		
 		missingText = new FlxText(50, 0, FlxG.width - 100, '', 24);
-		missingText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		missingText.setFormat(regFont, 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		missingText.scrollFactor.set();
 		missingText.visible = false;
 		add(missingText);
@@ -259,7 +263,7 @@ class FreeplayState extends MusicBeatState
 		bottomString = leText;
 		var size:Int = 16;
 		bottomText = new FlxText(bottomBG.x, bottomBG.y + 4, FlxG.width, leText, size);
-		bottomText.setFormat(Paths.font("vcr.ttf"), size, FlxColor.WHITE, CENTER);
+		bottomText.setFormat(regFont, size, FlxColor.WHITE, CENTER);
 		bottomText.scrollFactor.set();
 		add(bottomText);
 		
@@ -299,7 +303,8 @@ class FreeplayState extends MusicBeatState
 					if (file.endsWith('.json') && !loadedFiles.exists(file))
 					{
 						loadedFiles.set(file, true);
-						parseCategoryFile(folder + '/' + file);
+						var cleanName:String = file.substr(0, file.length - 5);
+						parseCategoryFile(folder + '/' + file, cleanName);
 					}
 				}
 			}
@@ -310,6 +315,7 @@ class FreeplayState extends MusicBeatState
 		{
 			categories.push({
 				title: "FREEPLAY",
+				fileName: "freeplay",
 				index: 0,
 				weeks: WeekData.weeksList.copy()
 			});
@@ -322,7 +328,7 @@ class FreeplayState extends MusicBeatState
 		}
 	}
 
-	function parseCategoryFile(filePath:String)
+	function parseCategoryFile(filePath:String, fileName:String)
 	{
 		try
 		{
@@ -358,6 +364,7 @@ class FreeplayState extends MusicBeatState
 
 				categories.push({
 					title: title,
+					fileName: fileName,
 					index: idx,
 					weeks: weekList
 				});
@@ -407,14 +414,25 @@ class FreeplayState extends MusicBeatState
 			tab.antialiasing = ClientPrefs.data.antialiasing;
 			grpCategoryTabs.add(tab);
 
-			var iconPath1:String = 'menu/freeplay/sections/' + categories[i].index;
-			var iconPath2:String = 'menu/freeplay/sections/icon-' + categories[i].index;
-			var foundIconPath:String = null;
+			var firstWord:String = categories[i].title.split(' ')[0].toLowerCase();
+			var candidates:Array<String> = [
+				'menu/freeplay/sections/' + categories[i].fileName,
+				'menu/freeplay/sections/' + categories[i].fileName.toLowerCase(),
+				'menu/freeplay/sections/' + categories[i].title.toLowerCase(),
+				'menu/freeplay/sections/' + firstWord,
+				'menu/freeplay/sections/' + categories[i].index,
+				'menu/freeplay/sections/icon-' + categories[i].index
+			];
 
-			if (Paths.fileExists('images/' + iconPath1 + '.png', IMAGE))
-				foundIconPath = iconPath1;
-			else if (Paths.fileExists('images/' + iconPath2 + '.png', IMAGE))
-				foundIconPath = iconPath2;
+			var foundIconPath:String = null;
+			for (cand in candidates)
+			{
+				if (Paths.fileExists('images/' + cand + '.png', IMAGE))
+				{
+					foundIconPath = cand;
+					break;
+				}
+			}
 
 			var catIcon:FlxSprite = new FlxSprite(tabX, tabY);
 			if (foundIconPath != null)
@@ -435,7 +453,7 @@ class FreeplayState extends MusicBeatState
 			grpCategoryIcons.add(catIcon);
 
 			var label:FlxText = new FlxText(tabX + 4, tabY + (tabSize - 18) / 2, tabSize - 8, categories[i].title.toUpperCase(), 13);
-			label.setFormat(Paths.font("vcr.ttf"), 13, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			label.setFormat(boldFont, 13, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			label.borderSize = 1.5;
 			label.scrollFactor.set();
 			label.visible = (foundIconPath == null);
@@ -543,7 +561,7 @@ class FreeplayState extends MusicBeatState
 			grpCards.add(card);
 
 			var songText:FlxText = new FlxText(0, 320, 340, songs[i].songName, 34);
-			songText.setFormat(Paths.font("vcr.ttf"), 34, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			songText.setFormat(boldFont, 34, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			songText.borderSize = 2.2;
 			songText.antialiasing = ClientPrefs.data.antialiasing;
 			songText.ID = i;
@@ -568,7 +586,7 @@ class FreeplayState extends MusicBeatState
 			grpNoteIcons.add(noteIcon);
 
 			var creditText:FlxText = new FlxText(0, 320, 315, creditStr, 20);
-			creditText.setFormat(Paths.font("vcr.ttf"), 20, 0xFFE8F4F8, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			creditText.setFormat(regFont, 20, 0xFFE8F4F8, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 			creditText.borderSize = 1.6;
 			creditText.antialiasing = ClientPrefs.data.antialiasing;
 			creditText.visible = creditText.active = false;
@@ -1316,13 +1334,12 @@ class FreeplayState extends MusicBeatState
 
 				var maxIconDim:Float = Math.max(icon.frameWidth, icon.frameHeight);
 				if (maxIconDim <= 0) maxIconDim = 150;
-				var iconFitScale:Float = ((76 * targetScale) / maxIconDim);
+				var iconFitScale:Float = ((74 * targetScale) / maxIconDim);
 
 				icon.scale.set(iconFitScale, iconFitScale);
 				icon.updateHitbox();
-				icon.centerOrigin();
 
-				var slotCenterX:Float = card.x + (54 * targetScale);
+				var slotCenterX:Float = card.x + (56 * targetScale);
 				var slotCenterY:Float = card.y + (card.height / 2);
 				icon.x = slotCenterX - (icon.width / 2);
 				icon.y = slotCenterY - (icon.height / 2);
