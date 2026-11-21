@@ -123,9 +123,9 @@ class FreeplayState extends MusicBeatState
 		add(bg);
 
 		glowBG = new FlxSprite(0, 0);
-		if (Paths.fileExists('images/menu/freeplay/glow.png', IMAGE))
+		if (Paths.fileExists('images/menu/freeplay/Backglow.png', IMAGE))
 		{
-			glowBG.loadGraphic(Paths.image('menu/freeplay/glow'));
+			glowBG.loadGraphic(Paths.image('menu/freeplay/Backglow'));
 		}
 		else
 		{
@@ -135,7 +135,6 @@ class FreeplayState extends MusicBeatState
 		glowBG.x = FlxG.width - glowBG.width;
 		glowBG.y = FlxG.height - glowBG.height;
 		glowBG.blend = BlendMode.ADD;
-		glowBG.alpha = 0.85;
 		glowBG.antialiasing = ClientPrefs.data.antialiasing;
 		add(glowBG);
 		
