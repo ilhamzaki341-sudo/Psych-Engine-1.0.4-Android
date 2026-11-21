@@ -382,7 +382,7 @@ class FreeplayState extends MusicBeatState
 		var totalWidth:Float = (categories.length * tabSize) + ((categories.length - 1) * spacing);
 		var startX:Float = (FlxG.width - totalWidth) / 2;
 
-		var hasTabAsset:Bool = Paths.fileExists('images/menu/freeplay/indexTab.png', IMAGE);
+		var hasTabAsset:Bool = Paths.fileExists('images/menu/freeplay/sections/blank.png', IMAGE);
 
 		for (i in 0...categories.length)
 		{
@@ -392,7 +392,7 @@ class FreeplayState extends MusicBeatState
 			var tab:FlxSprite = new FlxSprite(tabX, tabY);
 			if (hasTabAsset)
 			{
-				tab.loadGraphic(Paths.image('menu/freeplay/indexTab'));
+				tab.loadGraphic(Paths.image('menu/freeplay/sections/blank'));
 				tab.setGraphicSize(Std.int(tabSize), Std.int(tabSize));
 				tab.updateHitbox();
 			}
@@ -407,8 +407,8 @@ class FreeplayState extends MusicBeatState
 			tab.antialiasing = ClientPrefs.data.antialiasing;
 			grpCategoryTabs.add(tab);
 
-			var iconPath1:String = 'menu/freeplay/' + categories[i].index;
-			var iconPath2:String = 'menu/freeplay/icon-' + categories[i].index;
+			var iconPath1:String = 'menu/freeplay/sections/' + categories[i].index;
+			var iconPath2:String = 'menu/freeplay/sections/icon-' + categories[i].index;
 			var foundIconPath:String = null;
 
 			if (Paths.fileExists('images/' + iconPath1 + '.png', IMAGE))
