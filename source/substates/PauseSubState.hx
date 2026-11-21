@@ -79,12 +79,13 @@ class PauseSubState extends MusicBeatSubstate
 		}
 		pauseGroup.add(glow);
 
-		var dwp:String = getDadPortrait();
-		var p:String = portraitExists(dwp) ? dwp : 'placeholder';
+		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
+		var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
+		
 		var portrait:FlxSprite = new FlxSprite(0, -125);
-		if (Paths.fileExists('images/menu/freeplay/portraits/' + p + '.png', IMAGE))
+		if (Paths.fileExists('images/menu/freeplay/portraits/placeholder.png', IMAGE))
 		{
-			portrait.loadGraphic(Paths.image('menu/freeplay/portraits/' + p));
+			portrait.loadGraphic(Paths.image('menu/freeplay/portraits/' + imagePath));
 			portrait.offset.x += (portrait.frameWidth - 1215) * 0.5 * portrait.scale.x;
 			portrait.offset.y += (portrait.frameHeight - 1097) * 0.5 * portrait.scale.y;
 		}
