@@ -13,6 +13,7 @@ import substates.ResetScoreSubState;
 
 import flixel.math.FlxMath;
 import flixel.util.FlxDestroyUtil;
+import flixel.util.FlxSpriteUtil;
 import openfl.display.BlendMode;
 
 import openfl.utils.Assets;
@@ -54,6 +55,7 @@ class FreeplayState extends MusicBeatState
 	var glowTween:FlxTween;
 	var songFrame:FlxSprite;
 	var frameTween:FlxTween;
+	var menuBack:FlxSprite;
 
 	var missingTextBG:FlxSprite;
 	var missingText:FlxText;
@@ -86,8 +88,8 @@ class FreeplayState extends MusicBeatState
 		DiscordClient.changePresence("In the Menus", null);
 		#end
 
-		final accept:String = (controls.mobileC) ? "A" : "ACCEPT";
-		final reject:String = (controls.mobileC) ? "B" : "BACK";
+		final accept:String = "ACCEPT";
+		final reject:String = "BACK";
 
 		if(WeekData.weeksList.length < 1)
 		{
@@ -234,6 +236,25 @@ class FreeplayState extends MusicBeatState
 		diffText.borderSize = 1.5;
 		add(diffText);
 
+		menuBack = new FlxSprite(22, 18);
+		if (Paths.fileExists('images/menu/common/menuBack.png', IMAGE))
+		{
+			menuBack.loadGraphic(Paths.image('menu/common/menuBack'));
+		}
+		else
+		{
+			menuBack.makeGraphic(68, 68, FlxColor.TRANSPARENT, true);
+			FlxSpriteUtil.drawCircle(menuBack, 34, 34, 32, 0xFF33393D);
+			FlxSpriteUtil.drawCircle(menuBack, 34, 34, 27, 0xFFD9DEE1);
+			FlxSpriteUtil.drawCircle(menuBack, 34, 34, 22, 0xFFF3F5F6);
+			FlxSpriteUtil.drawLine(menuBack, 24, 24, 44, 44, {color: 0xFF23272A, thickness: 5});
+			FlxSpriteUtil.drawLine(menuBack, 44, 24, 24, 44, {color: 0xFF23272A, thickness: 5});
+		}
+		menuBack.updateHitbox();
+		menuBack.scrollFactor.set();
+		menuBack.antialiasing = ClientPrefs.data.antialiasing;
+		add(menuBack);
+
 		missingTextBG = new FlxSprite().makeGraphic(FlxG.width, FlxG.height, FlxColor.BLACK);
 		missingTextBG.alpha = 0.6;
 		missingTextBG.visible = false;
@@ -251,9 +272,9 @@ class FreeplayState extends MusicBeatState
 		bottomBG.alpha = 0.6;
 		add(bottomBG);
 
-		final space:String = (controls.mobileC) ? "X" : "SPACE";
-		final control:String = (controls.mobileC) ? "C" : "CTRL";
-		final reset:String = (controls.mobileC) ? "Y" : "RESET";
+		final space:String = "SPACE";
+		final control:String = "CTRL";
+		final reset:String = "RESET";
 		
 		var leText:String = Language.getPhrase("freeplay_tip", "Press {1} to listen to the Song / Press {2} to open the Gameplay Changers Menu / Press {3} to Reset your Score and Accuracy.", [space, control, reset]);
 		bottomString = leText;
@@ -268,10 +289,11 @@ class FreeplayState extends MusicBeatState
 		
 		lerpSelected = curSelected;
 		changeSelection();
+		if (songs.length > 0)
+			glowBG.color = getHealthColorFromCharacter(songs[curSelected].songCharacter);
 		updateTexts(0);
 
 		FlxG.mouse.visible = true;
-		addTouchPad('NONE', 'A_B_C_X_Y_Z');
 		super.create();
 	}
 
@@ -360,8 +382,6 @@ class FreeplayState extends MusicBeatState
 		changeSelection(0, false);
 		persistentUpdate = true;
 		super.closeSubState();
-		removeTouchPad();
-		addTouchPad('NONE', 'A_B_C_X_Y_Z');
 	}
 
 	public function addSong(songName:String, weekNum:Int, songCharacter:String)
@@ -405,7 +425,21 @@ class FreeplayState extends MusicBeatState
 			ratingSplit[1] += '0';
 
 		var shiftMult:Int = 1;
-		if((FlxG.keys.pressed.SHIFT || touchPad.buttonZ.pressed) && !player.playingMusic) shiftMult = 3;
+		if(FlxG.keys.pressed.SHIFT && !player.playingMusic) shiftMult = 3;
+
+		var clickedBack:Bool = false;
+		if (menuBack != null)
+		{
+			var hoveringBack:Bool = FlxG.mouse.overlaps(menuBack);
+			var targetBackScale:Float = hoveringBack ? 1.08 : 1.0;
+			var nextScale:Float = FlxMath.lerp(menuBack.scale.x, targetBackScale, Math.exp(-elapsed * 16));
+			menuBack.scale.set(nextScale, nextScale);
+
+			if (hoveringBack && FlxG.mouse.justPressed)
+			{
+				clickedBack = true;
+			}
+		}
 
 		if (!player.playingMusic)
 		{
@@ -506,7 +540,7 @@ class FreeplayState extends MusicBeatState
 		}
 
 		bg.x -= 9 * elapsed;
-		if (controls.BACK)
+		if (controls.BACK || clickedBack)
 		{
 			if (player.playingMusic)
 			{
@@ -527,9 +561,12 @@ class FreeplayState extends MusicBeatState
 				FlxG.sound.play(Paths.sound('cancelMenu'));
 				MusicBeatState.switchState(new MainMenuState());
 			}
+			updateTexts(elapsed);
+			super.update(elapsed);
+			return;
 		}
 
-		if (!player.playingMusic && FlxG.mouse.justReleased && !hasDragged)
+		if (!player.playingMusic && FlxG.mouse.justReleased && !hasDragged && !clickedBack)
 		{
 			for (i in _lastVisibles)
 			{
@@ -550,13 +587,12 @@ class FreeplayState extends MusicBeatState
 			}
 		}
 
-		if((FlxG.keys.justPressed.CONTROL || touchPad.buttonC.justPressed) && !player.playingMusic)
+		if(FlxG.keys.justPressed.CONTROL && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			openSubState(new GameplayChangersSubstate());
-			removeTouchPad();
 		}
-		else if(FlxG.keys.justPressed.SPACE || touchPad.buttonX.justPressed)
+		else if(FlxG.keys.justPressed.SPACE)
 		{
 			if(instPlaying != curSelected && !player.playingMusic)
 			{
@@ -632,11 +668,10 @@ class FreeplayState extends MusicBeatState
 		{
 			confirmSong();
 		}
-		else if((controls.RESET || touchPad.buttonY.justPressed) && !player.playingMusic)
+		else if(controls.RESET && !player.playingMusic)
 		{
 			persistentUpdate = false;
 			openSubState(new ResetScoreSubState(songs[curSelected].songName, curDifficulty, songs[curSelected].songCharacter));
-			removeTouchPad();
 			FlxG.sound.play(Paths.sound('scrollMenu'));
 		}
 		
@@ -925,6 +960,7 @@ class FreeplayState extends MusicBeatState
 				icon.alpha = targetAlpha;
 				icon.scale.set(targetScale * 0.56, targetScale * 0.56);
 				icon.updateHitbox();
+				icon.offset.set(0, 0);
 				icon.x = card.x + (18 * targetScale);
 				icon.y = card.y + (card.height - icon.height) / 2;
 			}
