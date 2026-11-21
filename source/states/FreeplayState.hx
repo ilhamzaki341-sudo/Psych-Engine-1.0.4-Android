@@ -33,6 +33,7 @@ class FreeplayState extends MusicBeatState
 	var curDifficulty:Int = -1;
 	private static var lastDifficultyName:String = Difficulty.getDefault();
 
+	var topBar:FlxSprite;
 	var scoreBG:FlxSprite;
 	var scoreText:FlxText;
 	var accuracyText:FlxText;
@@ -215,27 +216,48 @@ class FreeplayState extends MusicBeatState
 			add(icon);
 		}
 		WeekData.setDirectoryFromWeek();
+
+		topBar = new FlxSprite(0, 0);
+		if (Paths.fileExists('images/menu/common/topBar.png', IMAGE))
+		{
+			topBar.loadGraphic(Paths.image('menu/common/topBar'));
+		}
+		else if (Paths.fileExists('images/menu/freeplay/topBar.png', IMAGE))
+		{
+			topBar.loadGraphic(Paths.image('menu/freeplay/topBar'));
+		}
+		else
+		{
+			topBar.makeGraphic(FlxG.width, 96, 0xFF9FB0BF);
+		}
+		topBar.setGraphicSize(FlxG.width, 96);
+		topBar.updateHitbox();
+		topBar.scrollFactor.set();
+		topBar.antialiasing = ClientPrefs.data.antialiasing;
+		add(topBar);
 		
-		scoreBG = new FlxSprite(0, 0).makeGraphic(1, 108, 0xFF000000);
+		var topOffset:Float = topBar.height;
+
+		scoreBG = new FlxSprite(0, topOffset).makeGraphic(1, 108, 0xFF000000);
 		scoreBG.alpha = 0.6;
 		add(scoreBG);
 
-		scoreText = new FlxText(-14, 8, FlxG.width, "", 30);
+		scoreText = new FlxText(-14, topOffset + 8, FlxG.width, "", 30);
 		scoreText.setFormat(Paths.font("vcr.ttf"), 30, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		scoreText.borderSize = 1.5;
 		add(scoreText);
 
-		accuracyText = new FlxText(-14, 42, FlxG.width, "", 28);
+		accuracyText = new FlxText(-14, topOffset + 42, FlxG.width, "", 28);
 		accuracyText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		accuracyText.borderSize = 1.5;
 		add(accuracyText);
 
-		diffText = new FlxText(0, 76, 0, "", 24);
+		diffText = new FlxText(0, topOffset + 76, 0, "", 24);
 		diffText.setFormat(Paths.font("vcr.ttf"), 24, FlxColor.WHITE, CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		diffText.borderSize = 1.5;
 		add(diffText);
 
-		menuBack = new FlxSprite(22, 18);
+		menuBack = new FlxSprite(22, 14);
 		if (Paths.fileExists('images/menu/common/menuBack.png', IMAGE))
 		{
 			menuBack.loadGraphic(Paths.image('menu/common/menuBack'));
@@ -250,6 +272,7 @@ class FreeplayState extends MusicBeatState
 			FlxSpriteUtil.drawLine(menuBack, 44, 24, 24, 44, {color: 0xFF23272A, thickness: 5});
 		}
 		menuBack.updateHitbox();
+		menuBack.y = (topBar.height - menuBack.height) / 2;
 		menuBack.scrollFactor.set();
 		menuBack.antialiasing = ClientPrefs.data.antialiasing;
 		add(menuBack);
@@ -895,6 +918,8 @@ class FreeplayState extends MusicBeatState
 
 	private function positionHighscore()
 	{
+		var topOffset:Float = (topBar != null) ? topBar.height : 0;
+
 		var scoreW:Float = scoreText.textField.textWidth;
 		var accW:Float = accuracyText.textField.textWidth;
 		var diffW:Float = diffText.textField.textWidth;
@@ -904,10 +929,16 @@ class FreeplayState extends MusicBeatState
 		scoreBG.setGraphicSize(Std.int(boxWidth), 108);
 		scoreBG.updateHitbox();
 		scoreBG.x = FlxG.width - scoreBG.width;
+		scoreBG.y = topOffset;
 
 		scoreText.x = -14;
+		scoreText.y = topOffset + 8;
+
 		accuracyText.x = -14;
+		accuracyText.y = topOffset + 42;
+
 		diffText.x = scoreBG.x + (scoreBG.width - diffText.width) / 2;
+		diffText.y = topOffset + 76;
 	}
 
 	var _drawDistance:Int = 5;
@@ -941,7 +972,7 @@ class FreeplayState extends MusicBeatState
 			var targetScale:Float = Math.max(0.65, 1.0 - (absDiff * 0.1));
 			var targetAlpha:Float = (i == curSelected) ? 1.0 : Math.max(0.45, 1.0 - (absDiff * 0.22));
 
-			var centerY:Float = (FlxG.height * 0.47) + (diff * spacingY);
+			var centerY:Float = (FlxG.height * 0.50) + (diff * spacingY);
 			var targetCardX:Float = 95 - (Math.pow(absDiff, 1.35) * 42);
 
 			card.visible = card.active = true;
@@ -957,15 +988,23 @@ class FreeplayState extends MusicBeatState
 			{
 				icon.visible = icon.active = true;
 				icon.alpha = targetAlpha;
-				icon.scale.set(targetScale * 0.56, targetScale * 0.56);
+
+				var maxIconDim:Float = Math.max(icon.frameWidth, icon.frameHeight);
+				if (maxIconDim <= 0) maxIconDim = 150;
+				var iconFitScale:Float = ((76 * targetScale) / maxIconDim);
+
+				icon.scale.set(iconFitScale, iconFitScale);
 				icon.updateHitbox();
-				icon.offset.set(0, 0);
-				icon.x = card.x + (18 * targetScale);
-				icon.y = card.y + (card.height - icon.height) / 2;
+				icon.centerOrigin();
+
+				var slotCenterX:Float = card.x + (54 * targetScale);
+				var slotCenterY:Float = card.y + (card.height / 2);
+				icon.x = slotCenterX - (icon.width / 2);
+				icon.y = slotCenterY - (icon.height / 2);
 			}
 
 			var hasCredit:Bool = (credit != null && credit.text != null && credit.text.length > 0);
-			var textStartX:Float = card.x + (128 * targetScale);
+			var textStartX:Float = card.x + (116 * targetScale);
 
 			item.visible = item.active = true;
 			item.alpha = targetAlpha;
