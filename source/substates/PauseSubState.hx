@@ -78,25 +78,34 @@ class PauseSubState extends MusicBeatSubstate
 				glow.color = FlxColor.fromRGB(arr[0], arr[1], arr[2]);
 		}
 		pauseGroup.add(glow);
-
-		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
-		var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
 		
-		var portrait:FlxSprite = new FlxSprite(0, -125);
-		if (Paths.fileExists('images/menu/freeplay/portraits/placeholder.png', IMAGE))
+		if (songs.length > 0)
 		{
-			portrait.loadGraphic(Paths.image('menu/freeplay/portraits/' + imagePath));
+			var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
+			var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
+			
+			portrait = new FlxSprite(FlxG.width, -125);
+			if (Paths.fileExists('images/' + imagePath + '.png', IMAGE))
+			{
+				portrait.loadGraphic(Paths.image(imagePath));
+			}
+			else if (Paths.fileExists('images/menu/freeplay/portraits/placeholder.png', IMAGE))
+			{
+				portrait.loadGraphic(Paths.image('menu/freeplay/portraits/placeholder'));
+			}
+			else
+			{
+				portrait.makeGraphic(1, 1, FlxColor.TRANSPARENT);
+			}
+
+			portrait.antialiasing = ClientPrefs.data.antialiasing;
 			portrait.offset.x += (portrait.frameWidth - 1215) * 0.5 * portrait.scale.x;
 			portrait.offset.y += (portrait.frameHeight - 1097) * 0.5 * portrait.scale.y;
-		}
-		else
-		{
-			portrait.makeGraphic(1, 1, FlxColor.TRANSPARENT);
-		}
-		portrait.x = FlxG.width;
-		pauseGroup.add(portrait);
+			
+			pauseGroup.add(portrait);
 
-		FlxTween.tween(portrait, {x: 304.65}, 0.3, {ease: FlxEase.circOut});
+			FlxTween.tween(portrait, {x: 304.65}, 0.3, {ease: FlxEase.circOut});
+		}
 
 		var pad:Int = 15;
 
