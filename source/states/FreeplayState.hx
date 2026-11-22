@@ -145,6 +145,13 @@ class FreeplayState extends MusicBeatState
 		glowBG.antialiasing = ClientPrefs.data.antialiasing;
 		add(glowBG);
 		
+		if (PlayState.instance != null && PlayState.instance.dad != null)
+		{
+			var arr:Array<Int> = PlayState.instance.dad.healthColorArray;
+			if (arr != null && arr.length >= 3)
+				glowBG.color = FlxColor.fromRGB(arr[0], arr[1], arr[2]);
+		}
+		
 		songFrame = new FlxSprite(0, 0);
 		songFrame.antialiasing = ClientPrefs.data.antialiasing;
 		add(songFrame);
@@ -1178,18 +1185,6 @@ class FreeplayState extends MusicBeatState
 		if(playSound) FlxG.sound.play(Paths.sound('scrollMenu'), 0.4);
 
 		Mods.currentModDirectory = songs[curSelected].folder;
-
-		var targetGlowColor:FlxColor = getHealthColorFromCharacter(songs[curSelected].songCharacter);
-		if (glowTween != null)
-		{
-			glowTween.cancel();
-		}
-		glowTween = FlxTween.color(glowBG, 0.35, glowBG.color, targetGlowColor, {
-			ease: FlxEase.quartOut,
-			onComplete: function(twn:FlxTween) {
-				glowTween = null;
-			}
-		});
 
 		var songFormatted:String = Paths.formatToSongPath(songs[curSelected].songName);
 		var imagePath:String = 'menu/freeplay/portraits/' + songFormatted;
