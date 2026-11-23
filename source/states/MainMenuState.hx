@@ -14,6 +14,7 @@ import flixel.math.FlxMath;
 import backend.Mods;
 import backend.Discord;
 import backend.ClientPrefs;
+import backend.Language;
 import backend.Paths;
 import backend.Conductor;
 import backend.MusicBeatState;
@@ -55,7 +56,9 @@ class MainMenuState extends MusicBeatState
 	var introActive:Bool = false;
 	var introTimer:Float = 0;
 	
+	static final BIG_KEYS:Array<String> = ['storymode', 'freeplay', 'credits'];
 	static final BIG_LABELS:Array<String> = ['STORY MODE', 'FREEPLAY', 'CREDITS'];
+	static final SMALL_KEYS:Array<String> = ['options', 'awards'];
 	static final SMALL_LABELS:Array<String> = ['OPTIONS', 'AWARDS'];
 	static final ICON_PREFIXES:Array<String> = [
 		'Red and Green instance 1', 
@@ -132,7 +135,7 @@ class MainMenuState extends MusicBeatState
 		vignette.active = false;
 		add(vignette);
 
-		var versionShit = new FlxText(12, FlxG.height - 24, 0, "VS Impostor Legacy Port - PE v1.0.4", 16);
+		var versionShit = new FlxText(12, FlxG.height - 24, 0, Language.getPhrase('impostor_version', 'VS Impostor Legacy Port - PE v{1}', [psychEngineVersion]), 16);
 		versionShit.scrollFactor.set();
 		versionShit.setFormat(Paths.font("vcr.ttf"), 16, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		add(versionShit);
@@ -192,7 +195,8 @@ class MainMenuState extends MusicBeatState
 
 			buttonY += (btn.height + 8);
 
-			var lbl = new FlxText(btn.x + 16, 0, btn.width - 32, BIG_LABELS[i], 24);
+			var labelText:String = Language.getPhrase('menu_${BIG_KEYS[i]}', BIG_LABELS[i]).toUpperCase();
+			var lbl = new FlxText(btn.x + 16, 0, btn.width - 32, labelText, 24);
 			lbl.setFormat(Paths.font('vcr.ttf'), 28, 0xFF0F332F, RIGHT);
 			lbl.y = Math.round(btn.y + (btn.height - lbl.height) * 0.5 + 4);
 			add(lbl);
@@ -217,7 +221,8 @@ class MainMenuState extends MusicBeatState
 			menuButtons.push(btn);
 			panelIntroItems.push(btn);
 
-			var lbl = new FlxText(btn.x + 16, 0, btn.width - 32, SMALL_LABELS[i], 22);
+			var labelText:String = Language.getPhrase('menu_${SMALL_KEYS[i]}', SMALL_LABELS[i]).toUpperCase();
+			var lbl = new FlxText(btn.x + 16, 0, btn.width - 32, labelText, 22);
 			lbl.setFormat(Paths.font('vcr.ttf'), 18, 0xFF0F332F, RIGHT);
 			lbl.y = Math.round(btn.y + (btn.height - lbl.height) * 0.5 + 3);
 			add(lbl);
