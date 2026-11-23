@@ -50,9 +50,11 @@ class FreeplayState extends MusicBeatState
 	var grpCategoryTabs:FlxTypedGroup<FlxSprite>;
 	var menuBack:FlxSprite;
 
-	// Score & Difficulty
+	// Score & Difficulty (Public untuk kompatibilitas MusicPlayer.hx Psych Engine 1.0.4)
+	public var scoreBG:FlxSprite;
+	public var scoreText:FlxText;
+	public var diffText:FlxText;
 	var infoText:FlxText;
-	var diffText:FlxText;
 	var lerpScore:Float = 0;
 	var lerpRating:Float = 0;
 	var intendedScore:Int = 0;
@@ -143,7 +145,7 @@ class FreeplayState extends MusicBeatState
 		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 
-		// 2. Portrait Glow & Character Portrait (Koordinat Impostor Legacy)
+		// Portrait Glow & Character Portrait (Koordinat Impostor Legacy)
 		porGlow = new FlxSprite(-11.1 + 496, -12.65);
 		if (Paths.fileExists('images/menu/freeplay/backGlow.png', IMAGE))
 			porGlow.loadGraphic(Paths.image('menu/freeplay/backGlow'));
@@ -159,7 +161,7 @@ class FreeplayState extends MusicBeatState
 		portrait.antialiasing = ClientPrefs.data.antialiasing;
 		add(portrait);
 
-		// 3. Grup Kartu Lagu
+		// Grup Kartu Lagu
 		grpCards = new FlxTypedGroup<FlxSprite>();
 		add(grpCards);
 		
@@ -172,7 +174,7 @@ class FreeplayState extends MusicBeatState
 		grpCredits = new FlxTypedGroup<FlxText>();
 		add(grpCredits);
 
-		// 4. Upper Bar & Tab Kategori Carousel
+		// Upper Bar & Tab Kategori Carousel
 		topBar = new FlxSprite(0, 0);
 		if (Paths.fileExists('images/menu/common/topBar.png', IMAGE))
 			topBar.loadGraphic(Paths.image('menu/common/topBar'));
@@ -197,7 +199,16 @@ class FreeplayState extends MusicBeatState
 		sectionText.antialiasing = ClientPrefs.data.antialiasing;
 		add(sectionText);
 
-		// 5. Info Skor & Difficulty (Tanpa kotak hitam, rata kanan ala Impostor)
+		// Dummy transparan untuk kompatibilitas MusicPlayer.hx
+		scoreBG = new FlxSprite(0, 82).makeGraphic(1, 1, 0x00000000);
+		scoreBG.alpha = 0;
+		add(scoreBG);
+
+		scoreText = new FlxText(0, 91, 1, '', 1);
+		scoreText.alpha = 0;
+		add(scoreText);
+
+		// Info Skor & Difficulty (Tanpa kotak hitam, rata kanan ala Impostor)
 		infoText = new FlxText(0, 91, FlxG.width - 14, '', 34);
 		infoText.setFormat(regFont, 34, FlxColor.WHITE, RIGHT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		infoText.borderSize = 2;
@@ -210,7 +221,7 @@ class FreeplayState extends MusicBeatState
 		diffText.antialiasing = ClientPrefs.data.antialiasing;
 		add(diffText);
 
-		// 6. Tombol Back di Kiri Atas
+		// Tombol Back di Kiri Atas
 		menuBack = new FlxSprite(22, 10);
 		if (Paths.fileExists('images/menu/common/menuBack.png', IMAGE))
 		{
@@ -679,6 +690,12 @@ class FreeplayState extends MusicBeatState
 		if (FlxG.sound.music.volume < 0.7)
 			FlxG.sound.music.volume += 0.5 * elapsed;
 
+		// Sinkronisasi visibilitas scoreBG & scoreText milik MusicPlayer dengan infoText
+		if (scoreBG != null && infoText != null)
+		{
+			infoText.visible = scoreBG.visible;
+		}
+
 		// Animasi Skor ala Impostor Legacy
 		lerpScore = FlxMath.lerp(lerpScore, intendedScore, Math.min(1, elapsed * 18));
 		lerpRating = FlxMath.lerp(lerpRating, intendedRating, Math.min(1, elapsed * 10));
@@ -1094,6 +1111,20 @@ class FreeplayState extends MusicBeatState
 		opponentVocals = FlxDestroyUtil.destroy(opponentVocals);
 	}
 
+	public function positionHighscore()
+	{
+		if (infoText != null)
+		{
+			infoText.x = 0;
+			infoText.y = 91;
+		}
+		if (diffText != null)
+		{
+			diffText.x = 0;
+			diffText.y = 172;
+		}
+	}
+
 	function changeDiff(change:Int = 0)
 	{
 		if (player.playingMusic || songs.length == 0)
@@ -1115,6 +1146,7 @@ class FreeplayState extends MusicBeatState
 		else
 			diffText.text = displayDiff;
 
+		positionHighscore();
 		missingText.visible = false;
 		missingTextBG.visible = false;
 	}
