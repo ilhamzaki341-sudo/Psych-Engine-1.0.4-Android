@@ -19,7 +19,7 @@ import backend.DiscordClient;
 
 using StringTools;
 
-class AwardsState extends MusicBeatState
+class AchievementsMenuState extends MusicBeatState
 {
 	var options:Array<String> = [];
 	var nameText:FlxText;
