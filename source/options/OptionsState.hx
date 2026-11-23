@@ -16,9 +16,10 @@ import states.PlayState;
 import options.NoteOffsetState;
 import options.ControlsSubState;
 import options.GraphicsSettingsSubState;
-import options.VisualsUISubState;
+import options.VisualsSettingsSubState;
 import options.GameplaySettingsSubState;
 import options.LanguageSubState;
+import options.NotesColorSubState;
 
 #if DISCORD_ALLOWED
 import backend.Discord;
@@ -35,7 +36,7 @@ class OptionsState extends MusicBeatState
 		'Controls',
 		'Adjust Delay and Combo',
 		'Graphics',
-		'Visuals and UI',
+		'Visuals',
 		'Gameplay',
 		'Language'
 	];
@@ -88,13 +89,13 @@ class OptionsState extends MusicBeatState
 		switch (label)
 		{
 			case 'Note Colors':
-				openSubState(new options.NotesSubState());
+				openSubState(new NotesColorSubState());
 			case 'Controls':
 				openSubState(new ControlsSubState());
 			case 'Graphics':
 				openSubState(new GraphicsSettingsSubState());
-			case 'Visuals and UI':
-				openSubState(new VisualsUISubState());
+			case 'Visuals':
+				openSubState(new VisualsSettingsSubState());
 			case 'Gameplay':
 				openSubState(new GameplaySettingsSubState());
 			case 'Language':
@@ -170,7 +171,7 @@ class OptionsState extends MusicBeatState
 		titleText.antialiasing = ClientPrefs.data.antialiasing;
 		add(titleText);
 
-		versionText = new FlxText(480, artImage.y + artImage.height + 20, 700, 'Vs Impostor Legacy Port');
+		versionText = new FlxText(480, artImage.y + artImage.height + 20, 700, 'Vs Impostor Legacy Port - PE 1.0.4');
 		versionText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, FlxTextAlign.CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
 		versionText.borderSize = 1.5;
 		versionText.antialiasing = ClientPrefs.data.antialiasing;
