@@ -1,5 +1,6 @@
 package states;
 
+import flixel.addons.display.FlxBackdrop;
 import flixel.FlxG;
 import flixel.FlxSprite;
 import flixel.input.keyboard.FlxKey;
@@ -35,6 +36,7 @@ class MainMenuState extends MusicBeatState
 	static var curMenuItem:Int = 0;
 	static var lastSmallBtn:Int = 3;
 	
+	var bg:FlxBackdrop;
 	var menuButtons:Array<FlxSprite> = [];
 	var menuLabels:Array<FlxText> = [];
 	var menuLabelBaseSizes:Array<Int> = [];
@@ -80,6 +82,12 @@ class MainMenuState extends MusicBeatState
 			FlxG.sound.playMusic(Paths.music('freakyMenu'), 0);
 		}
 
+		bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+		bg.setGraphicSize(1280, 720);
+		bg.updateHitbox();
+		bg.antialiasing = ClientPrefs.data.antialiasing;
+		add(bg);
+		
 		logo = new FlxSprite(0, -5);
 		logo.frames = Paths.getSparrowAtlas('logoBumpin');
 		logo.animation.addByPrefix('bump', 'logo bumpin', 24, false);
@@ -460,6 +468,7 @@ class MainMenuState extends MusicBeatState
 			}
 		}
 
+		bg.x -= 9 * elapsed;
 		super.update(elapsed);
 	}
 }
