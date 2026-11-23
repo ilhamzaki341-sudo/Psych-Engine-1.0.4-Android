@@ -29,6 +29,7 @@ import options.OptionsState;
 class MainMenuState extends MusicBeatState
 {
 	public static var fromTitle:Bool = false;
+	public static var psychEngineVersion:String = '1.0.4';
 	
 	var lockMovement:Bool = false;
 	var mouseMode:Bool = true;
