@@ -118,6 +118,10 @@ class AchievementsMenuState extends MusicBeatState
 		if (unlockedAwards >= options.length) howManyText.color = 0xFFFFE066;
 
 		refreshSelection();
+
+		#if TOUCH_CONTROLS_ALLOWED
+		addTouchPad('FULL', 'B');
+		#end
 	}
 
 	function refreshSelection():Void
@@ -280,7 +284,7 @@ class AchievementsMenuState extends MusicBeatState
 			}
 		}
 
-		if (controls.BACK)
+		if (controls.BACK || FlxG.keys.justPressed.B #if android || FlxG.android.justReleased.BACK #end)
 		{
 			FlxG.mouse.visible = false;
 			FlxG.sound.play(Paths.sound('cancelMenu'));
