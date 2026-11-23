@@ -1,55 +1,109 @@
 package options;
 
-import states.MainMenuState;
 import flixel.addons.display.FlxBackdrop;
-import backend.StageData;
+import flixel.group.FlxGroup.FlxTypedGroup;
+import flixel.text.FlxText;
+import flixel.util.FlxColor;
+import flixel.FlxG;
+import flixel.FlxSprite;
+
+import backend.ClientPrefs;
+import backend.Language;
+import backend.Paths;
+import backend.MusicBeatState;
+import states.MainMenuState;
+import states.PlayState;
+import options.NoteOffsetState;
+import options.ControlsSubState;
+import options.GraphicsSettingsSubState;
+import options.VisualsUISubState;
+import options.GameplaySettingsSubState;
+import options.LanguageSubState;
+
+#if DISCORD_ALLOWED
+import backend.Discord;
+#end
+
+using StringTools;
 
 class OptionsState extends MusicBeatState
 {
+	public static var onPlayState:Bool = false;
+
 	var options:Array<String> = [
 		'Note Colors',
 		'Controls',
 		'Adjust Delay and Combo',
 		'Graphics',
-		'Visuals',
-		'Gameplay'
-		#if TRANSLATIONS_ALLOWED , 'Language' #end
-		,'Mobile Options'
+		'Visuals and UI',
+		'Gameplay',
+		'Language'
 	];
-	private var grpOptions:FlxTypedGroup<Alphabet>;
-	private static var curSelected:Int = 0;
-	public static var menuBG:FlxSprite;
-	public static var onPlayState:Bool = false;
 
-	function openSelectedSubstate(label:String) {
-		if (label != "Adjust Delay and Combo"){
-			removeTouchPad();
-			persistentUpdate = false;
-		}
-		switch(label)
-		{
-			case 'Note Colors':
-				openSubState(new options.NotesColorSubState());
-			case 'Controls':
-				openSubState(new options.ControlsSubState());
-			case 'Graphics':
-				openSubState(new options.GraphicsSettingsSubState());
-			case 'Visuals':
-				openSubState(new options.VisualsSettingsSubState());
-			case 'Gameplay':
-				openSubState(new options.GameplaySettingsSubState());
-			case 'Adjust Delay and Combo':
-				MusicBeatState.switchState(new options.NoteOffsetState());
-			case 'Mobile Options':
-				openSubState(new mobile.options.MobileOptionsSubState());
-			case 'Language':
-				openSubState(new options.LanguageSubState());
-		}
+	var __openedOption:Null<String> = null;
+	var optionTexts:FlxTypedGroup<FlxText>;
+
+	private static var curSelected:Int = 0;
+
+	var blockAllInput:Bool = false;
+	var blockInput:Bool = false;
+	var pendingSubstate:Null<String> = null;
+
+	var bg:FlxBackdrop;
+	var titleText:FlxText;
+	var versionText:FlxText;
+	var artImage:FlxSprite;
+	var optionsHeader:FlxText;
+	var menuBackButton:FlxSprite;
+
+	var mouseControlActive:Bool = true;
+	var hoveredOption:Int = -1;
+
+	static final OPTION_LABEL_BASE_SIZE:Int = 26;
+	static final OPTION_LABEL_MIN_SIZE:Int = 14;
+	static final OPTION_LABEL_MAX_LINES:Int = 2;
+
+	var buttonBaseX:Float = 95;
+	var buttonBaseY:Float = 112;
+	var buttonSpacing:Float = 72;
+
+	function byeByeHomePanel(visible:Bool):Void
+	{
+		if (titleText != null) titleText.visible = visible;
+		if (versionText != null) versionText.visible = visible;
+		if (artImage != null) artImage.visible = visible;
 	}
 
-	var selectorLeft:Alphabet;
-	var selectorRight:Alphabet;
-	var bg:FlxBackdrop;
+	public function openSelectedSubstate(label:String)
+	{
+		if (label == 'Adjust Delay and Combo')
+		{
+			MusicBeatState.switchState(new NoteOffsetState());
+			return;
+		}
+
+		byeByeHomePanel(false);
+		blockInput = true;
+
+		switch (label)
+		{
+			case 'Note Colors':
+				openSubState(new options.NotesSubState());
+			case 'Controls':
+				openSubState(new ControlsSubState());
+			case 'Graphics':
+				openSubState(new GraphicsSettingsSubState());
+			case 'Visuals and UI':
+				openSubState(new VisualsUISubState());
+			case 'Gameplay':
+				openSubState(new GameplaySettingsSubState());
+			case 'Language':
+				openSubState(new LanguageSubState());
+		}
+
+		__openedOption = label;
+		pendingSubstate = null;
+	}
 
 	override function create()
 	{
@@ -57,116 +111,258 @@ class OptionsState extends MusicBeatState
 		DiscordClient.changePresence("Options Menu", null);
 		#end
 
-        bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
-        bg.setGraphicSize(1280, 720);
-        bg.updateHitbox();
-        bg.antialiasing = ClientPrefs.data.antialiasing;
-		bg.screenCenter();
+		persistentUpdate = true;
+		FlxG.mouse.enabled = true;
+		#if android
+		FlxG.mouse.visible = false;
+		#else
+		FlxG.mouse.visible = true;
+		#end
+
+		var ext:String = 'menu/options/';
+
+		bg = new FlxBackdrop(Paths.image('menu/common/starFG'), X);
+		bg.setGraphicSize(1280, 720);
+		bg.updateHitbox();
+		bg.antialiasing = ClientPrefs.data.antialiasing;
 		add(bg);
 
-		if (controls.mobileC)
+		var thingy:FlxSprite = new FlxSprite(50, 30).loadGraphic(Paths.image(ext + 'thingy'));
+		thingy.antialiasing = ClientPrefs.data.antialiasing;
+		add(thingy);
+
+		optionsHeader = new FlxText(75, 30, 0, Language.getPhrase('options_menu', 'OPTIONS'), 50);
+		optionsHeader.setFormat(Paths.font('AmaticSC-Bold.ttf'), 50, FlxColor.WHITE, FlxTextAlign.CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		optionsHeader.borderSize = 2;
+		optionsHeader.antialiasing = ClientPrefs.data.antialiasing;
+		add(optionsHeader);
+
+		menuBackButton = new FlxSprite(1100, 30).loadGraphic(Paths.image('menu/common/menuBack'));
+		menuBackButton.antialiasing = ClientPrefs.data.antialiasing;
+		add(menuBackButton);
+
+		optionTexts = new FlxTypedGroup<FlxText>();
+		add(optionTexts);
+
+		for (i in 0...options.length)
 		{
-			var tipText:FlxText = new FlxText(150, FlxG.height - 24, 0, 'Press ' + (FlxG.onMobile ? 'C' : 'CTRL or C') + ' to Go Mobile Controls Menu', 16);
-			tipText.setFormat("VCR OSD Mono", 17, FlxColor.WHITE, LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
-			tipText.borderSize = 1.25;
-			tipText.scrollFactor.set();
-			tipText.antialiasing = ClientPrefs.data.antialiasing;
-			add(tipText);
+			var keyName:String = options[i].toLowerCase().replace(' ', '_');
+			var labelStr:String = Language.getPhrase('options_$keyName', options[i]);
+
+			var txt:FlxText = new FlxText(buttonBaseX, buttonBaseY + (buttonSpacing * i), 320, labelStr);
+			txt.setFormat(Paths.font("vcr.ttf"), OPTION_LABEL_BASE_SIZE, FlxColor.WHITE, FlxTextAlign.LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			txt.borderSize = 2;
+			txt.antialiasing = ClientPrefs.data.antialiasing;
+			txt.ID = i;
+			fitLeftOptionLabel(txt);
+			optionTexts.add(txt);
 		}
 
-		grpOptions = new FlxTypedGroup<Alphabet>();
-		add(grpOptions);
+		artImage = new FlxSprite(500, 375).loadGraphic(Paths.image(ext + 'art'));
+		artImage.antialiasing = ClientPrefs.data.antialiasing;
+		artImage.y -= Math.round(artImage.height * 0.5);
+		add(artImage);
 
-		for (num => option in options)
-		{
-			var optionText:Alphabet = new Alphabet(0, 0, Language.getPhrase('options_$option', option), true);
-			optionText.screenCenter();
-			optionText.y += (92 * (num - (options.length / 2))) + 45;
-			grpOptions.add(optionText);
-		}
+		titleText = new FlxText(480, artImage.y, 700, 'VS IMPOSTOR: LEGACY');
+		titleText.setFormat(Paths.font("vcr.ttf"), 42, FlxColor.WHITE, FlxTextAlign.CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		titleText.y -= (titleText.height + 16);
+		titleText.borderSize = 2;
+		titleText.antialiasing = ClientPrefs.data.antialiasing;
+		add(titleText);
 
-		selectorLeft = new Alphabet(0, 0, '>', true);
-		add(selectorLeft);
-		selectorRight = new Alphabet(0, 0, '<', true);
-		add(selectorRight);
+		versionText = new FlxText(480, artImage.y + artImage.height + 20, 700, 'Vs Impostor Legacy Port');
+		versionText.setFormat(Paths.font("vcr.ttf"), 28, FlxColor.WHITE, FlxTextAlign.CENTER, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		versionText.borderSize = 1.5;
+		versionText.antialiasing = ClientPrefs.data.antialiasing;
+		add(versionText);
 
 		changeSelection();
-		ClientPrefs.saveSettings();
+		refreshOptionFonts();
+		byeByeHomePanel(true);
 
-		addTouchPad('UP_DOWN', 'A_B_C');
+		#if TOUCH_CONTROLS_ALLOWED
+		addTouchPad('UP_DOWN', 'A_B');
+		#end
 
 		super.create();
 	}
 
 	override function closeSubState()
 	{
+		__openedOption = null;
+		blockInput = false;
+		refreshOptionFonts();
+
+		if (pendingSubstate == null) byeByeHomePanel(true);
+
 		super.closeSubState();
-		ClientPrefs.saveSettings();
-		#if DISCORD_ALLOWED
-		DiscordClient.changePresence("Options Menu", null);
-		#end
-		controls.isInSubstate = false;
-		removeTouchPad();
-		addTouchPad('UP_DOWN', 'A_B_C');
-		persistentUpdate = true;
 	}
 
-	var exiting = false;
-	override function update(elapsed:Float) {
+	override function destroy():Void
+	{
+		ClientPrefs.saveSettings();
+		super.destroy();
+	}
+
+	function refreshOptionFonts()
+	{
+		optionsHeader.text = Language.getPhrase('options_menu', 'OPTIONS');
+		optionsHeader.y = (38 + Math.round((optionsHeader.size - optionsHeader.height) * 0.5));
+
+		for (txt in optionTexts.members)
+		{
+			var keyName:String = options[txt.ID].toLowerCase().replace(' ', '_');
+			txt.text = Language.getPhrase('options_$keyName', options[txt.ID]);
+			fitLeftOptionLabel(txt);
+		}
+
+		refreshOptionVisuals();
+	}
+
+	function fitLeftOptionLabel(txt:FlxText):Void
+	{
+		var size:Int = OPTION_LABEL_BASE_SIZE;
+		txt.fieldWidth = 300;
+		txt.setFormat(Paths.font('vcr.ttf'), size, txt.color, FlxTextAlign.LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+		txt.borderSize = 2;
+		txt.textField.wordWrap = true;
+		txt.textField.multiline = true;
+
+		while (size > OPTION_LABEL_MIN_SIZE && txt.textField.numLines > OPTION_LABEL_MAX_LINES)
+		{
+			size--;
+			txt.setFormat(Paths.font('vcr.ttf'), size, txt.color, FlxTextAlign.LEFT, FlxTextBorderStyle.OUTLINE, FlxColor.BLACK);
+			txt.borderSize = 2;
+			txt.textField.wordWrap = true;
+			txt.textField.multiline = true;
+		}
+
+		var slotY:Float = buttonBaseY + (buttonSpacing * txt.ID);
+		txt.y = Math.round(slotY + Math.max(0, (buttonSpacing - txt.height) * 0.5));
+	}
+
+	function refreshOptionVisuals()
+	{
+		if (blockAllInput) return;
+		for (txt in optionTexts.members)
+		{
+			txt.alpha = 1;
+			txt.color = 0xFFC9C9C9;
+
+			if (txt.ID == hoveredOption && txt.ID != curSelected)
+			{
+				txt.color = FlxColor.WHITE;
+			}
+			if (txt.ID == curSelected)
+			{
+				txt.color = 0xFFFFE066;
+			}
+		}
+	}
+
+	function exitOptions():Void
+	{
+		#if !android
+		FlxG.mouse.visible = false;
+		#end
+		FlxG.sound.play(Paths.sound('cancelMenu'));
+		if (onPlayState)
+		{
+			MusicBeatState.switchState(new PlayState());
+			if (FlxG.sound.music != null) FlxG.sound.music.volume = 0;
+			onPlayState = false;
+		}
+		else
+		{
+			MusicBeatState.switchState(new MainMenuState());
+		}
+	}
+
+	override function update(elapsed:Float)
+	{
 		super.update(elapsed);
 		bg.x -= 9 * elapsed;
 
-		if(!exiting) {
-			if (controls.UI_UP_P)
-				changeSelection(-1);
-			if (controls.UI_DOWN_P)
-				changeSelection(1);
-			
-			if (touchPad.buttonC.justPressed || FlxG.keys.justPressed.CONTROL && controls.mobileC)
-			{
-				persistentUpdate = false;
-				openSubState(new mobile.substates.MobileControlSelectSubState());
-			}
+		hoveredOption = -1;
 
-			if (controls.BACK)
-			{
-				exiting = true;
-				FlxG.sound.play(Paths.sound('cancelMenu'));
-				if(onPlayState)
-				{
-					StageData.loadDirectory(PlayState.SONG);
-					LoadingState.loadAndSwitchState(new PlayState());
-					FlxG.sound.music.volume = 0;
-				}
-				else MusicBeatState.switchState(new MainMenuState());
-			}
-			else if (controls.ACCEPT) openSelectedSubstate(options[curSelected]);
-		}
-	}
-	
-	function changeSelection(change:Int = 0)
-	{
-		curSelected = FlxMath.wrap(curSelected + change, 0, options.length - 1);
-
-		for (num => item in grpOptions.members)
+		if (FlxG.mouse.justMoved || FlxG.mouse.justPressed)
 		{
-			item.targetY = num - curSelected;
-			item.alpha = 0.6;
-			if (item.targetY == 0)
+			mouseControlActive = true;
+		}
+		if (controls.UI_UP_P || controls.UI_DOWN_P || controls.ACCEPT || controls.BACK)
+		{
+			mouseControlActive = false;
+		}
+
+		if (FlxG.mouse.justPressed && FlxG.mouse.overlaps(menuBackButton) && !blockAllInput)
+		{
+			exitOptions();
+			return;
+		}
+
+		if (mouseControlActive && !blockAllInput)
+		{
+			for (txt in optionTexts.members)
 			{
-				item.alpha = 1;
-				selectorLeft.x = item.x - 63;
-				selectorLeft.y = item.y;
-				selectorRight.x = item.x + item.width + 15;
-				selectorRight.y = item.y;
+				if (!FlxG.mouse.overlaps(txt)) continue;
+				hoveredOption = txt.ID;
+
+				if (FlxG.mouse.justPressed)
+				{
+					if (txt.ID != curSelected)
+					{
+						curSelected = txt.ID;
+						changeSelection(0, true);
+					}
+
+					if (blockInput)
+					{
+						if (options[curSelected] == 'Adjust Delay and Combo')
+						{
+							MusicBeatState.switchState(new NoteOffsetState());
+						}
+						else if (__openedOption != null && __openedOption != options[curSelected])
+						{
+							pendingSubstate = options[curSelected];
+							closeSubState();
+							openSelectedSubstate(options[curSelected]);
+						}
+					}
+					else
+					{
+						openSelectedSubstate(options[curSelected]);
+					}
+				}
+				break;
 			}
 		}
-		FlxG.sound.play(Paths.sound('scrollMenu'));
+
+		refreshOptionVisuals();
+
+		if (!blockInput && !blockAllInput)
+		{
+			if (controls.UI_UP_P) changeSelection(-1);
+			if (controls.UI_DOWN_P) changeSelection(1);
+
+			if (controls.BACK #if android || FlxG.android.justReleased.BACK #end)
+			{
+				exitOptions();
+			}
+
+			if (controls.ACCEPT)
+			{
+				openSelectedSubstate(options[curSelected]);
+			}
+		}
 	}
 
-	override function destroy()
+	function changeSelection(change:Int = 0, ?fromMouse:Bool = false)
 	{
-		ClientPrefs.loadPrefs();
-		super.destroy();
+		curSelected += change;
+		if (curSelected < 0) curSelected = options.length - 1;
+		if (curSelected >= options.length) curSelected = 0;
+		refreshOptionVisuals();
+
+		FlxG.sound.play(Paths.sound('scrollMenu'), fromMouse ? 0.7 : 0.5);
 	}
 }
