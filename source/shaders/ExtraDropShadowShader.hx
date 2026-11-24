@@ -1,6 +1,11 @@
-package funkin.game.shaders;
+package shaders;
 
-class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
+import flixel.FlxSprite;
+import flixel.graphics.frames.FlxFrame;
+import flixel.math.FlxAngle;
+import flixel.system.FlxAssets.FlxShader;
+
+class ExtraDropShadowShader extends FlxShader
 {
 	public var antialiasing(get, set):Bool;
 	public var operation(default, set):LayerOperation = REPLACE;
@@ -50,7 +55,7 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 	}
 	public function setAdjustColor(brightness:Float = 0, hue:Float = 0, contrast:Float = 0, saturation:Float = 0):ExtraDropShadowShader
 	{
-		return setColorMatrix(@:privateAccess animate.internal.filters.AdjustColorFilter.getColorMatrix(brightness, hue, contrast, saturation));
+		return setColorMatrix(calculateColorMatrix(brightness, hue, contrast, saturation));
 	}
 	public function setHollowColorMatrix(matrix:Array<Float>):ExtraDropShadowShader
 	{
@@ -60,7 +65,7 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 	}
 	public function setHollowAdjustColor(brightness:Float = 0, hue:Float = 0, contrast:Float = 0, saturation:Float = 0):ExtraDropShadowShader
 	{
-		return setHollowColorMatrix(@:privateAccess animate.internal.filters.AdjustColorFilter.getColorMatrix(brightness, hue, contrast, saturation));
+		return setHollowColorMatrix(calculateColorMatrix(brightness, hue, contrast, saturation));
 	}
 	
 	public function addLayer(colorMatrix:Array<Float>, angle:Float = 0, distance:Float = 20, threshold:Float = .01, strength:Float = 1, roughness:Float = 1):ExtraDropShadowLayer
@@ -76,12 +81,12 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 		return rimlight.setColorMatrix(colorMatrix).setAttributes(angle, distance, threshold, strength, roughness);
 	}
 	
-	public function updateFrameInfo(frame:Null<flixel.graphics.frames.FlxFrame>):Void
+	public function updateFrameInfo(frame:Null<FlxFrame>):Void
 	{
 		if (frame == null) return;
 		
 		frameBounds.value = [frame.uv.left, frame.uv.top, frame.uv.right, frame.uv.bottom];
-		angOffset.value = [frame.angle * flixel.math.FlxAngle.TO_RAD];
+		angOffset.value = [frame.angle * FlxAngle.TO_RAD];
 	}
 	
 	function getFreeLayer():Null<ExtraDropShadowLayer>
@@ -123,11 +128,98 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 		
 		return operation = op;
 	}
+
+	public static function calculateColorMatrix(brightness:Float = 0, hue:Float = 0, contrast:Float = 0, saturation:Float = 0):Array<Float>
+	{
+		var m:Array<Float> = [
+			1, 0, 0, 0, 0,
+			0, 1, 0, 0, 0,
+			0, 0, 1, 0, 0,
+			0, 0, 0, 1, 0
+		];
+
+		// Brightness
+		if (brightness != 0)
+		{
+			m = multiplyMatrix(m, [
+				1, 0, 0, 0, brightness,
+				0, 1, 0, 0, brightness,
+				0, 0, 1, 0, brightness,
+				0, 0, 0, 1, 0
+			]);
+		}
+
+		// Contrast
+		if (contrast != 0)
+		{
+			var c:Float = (contrast / 100.0) + 1.0;
+			var t:Float = 128.0 * (1.0 - c);
+			m = multiplyMatrix(m, [
+				c, 0, 0, 0, t,
+				0, c, 0, 0, t,
+				0, 0, c, 0, t,
+				0, 0, 0, 1, 0
+			]);
+		}
+
+		// Saturation
+		if (saturation != 0)
+		{
+			var s:Float = (saturation / 100.0) + 1.0;
+			var invS:Float = 1.0 - s;
+			var rLum:Float = 0.2126 * invS;
+			var gLum:Float = 0.7152 * invS;
+			var bLum:Float = 0.0722 * invS;
+			m = multiplyMatrix(m, [
+				rLum + s, gLum,     bLum,     0, 0,
+				rLum,     gLum + s, bLum,     0, 0,
+				rLum,     gLum,     bLum + s, 0, 0,
+				0,        0,        0,        1, 0
+			]);
+		}
+
+		// Hue
+		if (hue != 0)
+		{
+			var rad:Float = (hue % 360) * Math.PI / 180.0;
+			var cosVal:Float = Math.cos(rad);
+			var sinVal:Float = Math.sin(rad);
+			var lumR:Float = 0.213;
+			var lumG:Float = 0.715;
+			var lumB:Float = 0.072;
+			m = multiplyMatrix(m, [
+				lumR + cosVal * (1 - lumR) + sinVal * (-lumR), lumG + cosVal * (-lumG) + sinVal * (-lumG), lumB + cosVal * (-lumB) + sinVal * (1 - lumB), 0, 0,
+				lumR + cosVal * (-lumR) + sinVal * 0.143,      lumG + cosVal * (1 - lumG) + sinVal * 0.14,  lumB + cosVal * (-lumB) + sinVal * (-0.283), 0, 0,
+				lumR + cosVal * (-lumR) + sinVal * (-(1 - lumR)), lumG + cosVal * (-lumG) + sinVal * lumG,  lumB + cosVal * (1 - lumB) + sinVal * lumB,    0, 0,
+				0, 0, 0, 1, 0
+			]);
+		}
+
+		return m;
+	}
+
+	static function multiplyMatrix(a:Array<Float>, b:Array<Float>):Array<Float>
+	{
+		var res:Array<Float> = [];
+		for (i in 0...4)
+		{
+			for (j in 0...5)
+			{
+				var val:Float = 0;
+				for (k in 0...4)
+				{
+					val += a[i * 5 + k] * b[k * 5 + j];
+				}
+				if (j == 4) val += a[i * 5 + 4];
+				res.push(val);
+			}
+		}
+		return res;
+	}
 	
 	@:glFragmentSource('
 		#pragma header
 		
-		// cant set uniofrm arrays in openfl so i guess i just have to deal with this SUTPID shit
 		uniform mat4 rimlightMultipliers0; uniform mat4 rimlightMultipliers1; uniform mat4 rimlightMultipliers2;
 		uniform mat4 rimlightMultipliers3; uniform mat4 rimlightMultipliers4; uniform mat4 rimlightMultipliers5;
 		
@@ -136,15 +228,6 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 		
 		uniform mat3 rimlightData0; uniform mat3 rimlightData1; uniform mat3 rimlightData2;
 		uniform mat3 rimlightData3; uniform mat3 rimlightData4; uniform mat3 rimlightData5;
-		/*
-		[
-		angle, 		distance, 	threshold,
-		strength, 	roughness, 	idk
-		idk, 		idk, 		idk
-		]
-		
-		cant qwait for this to bite me in the butt
-		*/
 		
 		uniform bool aa;
 		uniform float aaStages;
@@ -181,7 +264,7 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 			return fract((p3.xx + p3.yz) * p3.zy);
 		}
 		
-		float antialias(vec2 coord, float thresh, float roughness) { // form the fnf shader
+		float antialias(vec2 coord, float thresh, float roughness) {
 			if (aaStages == 0. || !aa) return cutoff(texture2D(bitmap, coord), thresh, roughness);
 			
 			const int MAX_AA = 8;
@@ -219,7 +302,7 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 			if (!aa) coord = (floor(coord * openfl_TextureSize) / openfl_TextureSize);
 			
 			float rimIntensity = (1. - texture2D(bitmap, coord).a);
-			if (frameBounds.z > 0 && (coord.x < frameBounds.x || coord.y < frameBounds.y || coord.x >= frameBounds.z || coord.y >= frameBounds.w)) rimIntensity = 1.;
+			if (frameBounds.z > 0. && (coord.x < frameBounds.x || coord.y < frameBounds.y || coord.x >= frameBounds.z || coord.y >= frameBounds.w)) rimIntensity = 1.;
 			
 			return (rimIntensity * strength * antialias(openfl_TextureCoordv, data[0].z, data[1].y));
 		}
@@ -255,7 +338,7 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 			}
 		}
 		
-		// written by emi3
+		// written by emi3 - ported to Psych Engine 1.0.4
 	')
 	
 	public function new()
@@ -283,6 +366,8 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 		scale.value = [1, 1];
 		aaStages.value = [0];
 		aa.value = [true];
+		frameBounds.value = [0, 0, 0, 0];
+		angOffset.value = [0];
 		
 		layers = [
 			for (id in 0 ... 6) {
@@ -353,7 +438,6 @@ class ExtraDropShadowShader extends flixel.system.FlxAssets.FlxShader
 	}
 }
 
-// puppy 's first private class >w<Ok sorry
 private class ExtraDropShadowLayer
 {
 	public var active(get, set):Bool;
@@ -401,7 +485,7 @@ private class ExtraDropShadowLayer
 	}
 	public function setAdjustColor(brightness:Float = 0, hue:Float = 0, contrast:Float = 0, saturation:Float = 0):ExtraDropShadowLayer
 	{
-		return setColorMatrix(@:privateAccess animate.internal.filters.AdjustColorFilter.getColorMatrix(brightness, hue, contrast, saturation));
+		return setColorMatrix(ExtraDropShadowShader.calculateColorMatrix(brightness, hue, contrast, saturation));
 	}
 	
 	inline function get_active():Bool return (strength > 0);
@@ -411,8 +495,8 @@ private class ExtraDropShadowLayer
 		return active;
 	}
 	
-	inline function get_angle():Float return (data[0] * flixel.math.FlxAngle.TO_DEG);
-	inline function set_angle(v:Float):Float return data[0] = (v * flixel.math.FlxAngle.TO_RAD);
+	inline function get_angle():Float return (data[0] * FlxAngle.TO_DEG);
+	inline function set_angle(v:Float):Float return data[0] = (v * FlxAngle.TO_RAD);
 	
 	inline function get_distance():Float return data[1];
 	inline function set_distance(v:Float):Float return data[1] = v;
