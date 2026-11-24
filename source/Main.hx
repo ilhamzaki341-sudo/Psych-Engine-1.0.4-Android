@@ -1,5 +1,6 @@
 package;
 
+import shaders.ExtraDropShadowShader;
 import debug.FPSCounter;
 import backend.Highscore;
 import flixel.FlxGame;
