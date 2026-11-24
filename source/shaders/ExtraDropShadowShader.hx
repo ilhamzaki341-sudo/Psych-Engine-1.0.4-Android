@@ -107,7 +107,7 @@ class ExtraDropShadowShader extends FlxShader
 			#if (flixel >= "5.9.0")
 			attachedSprite.animation.onFrameChange.remove(__attachedSpriteHook);
 			#else
-			attachedSprite.animation.callback = null;
+			if (attachedSprite.animation.callback == __attachedSpriteHook) attachedSprite.animation.callback = null;
 			#end
 		}
 
@@ -474,8 +474,8 @@ class ExtraDropShadowLayer
 	}
 	inline function set_colorMatrix(matrix:Array<Float>):Array<Float>
 	{
-		for (i in 0 ... 16) multipliers[i] = (matrix[i + Math.floor(i / 4)] != null ? matrix[i + Math.floor(i / 4)] : 0);
-		for (i in 0 ... 4) offsets[i] = ((matrix[i * 5 + 4] != null ? matrix[i * 5 + 4] : 0) / 255);
+		for (i in 0 ... 16) multipliers[i] = (i + Math.floor(i / 4) < matrix.length ? matrix[i + Math.floor(i / 4)] : 0.0);
+		for (i in 0 ... 4) offsets[i] = ((i * 5 + 4 < matrix.length ? matrix[i * 5 + 4] : 0.0) / 255.0);
 		return matrix;
 	}
 }
