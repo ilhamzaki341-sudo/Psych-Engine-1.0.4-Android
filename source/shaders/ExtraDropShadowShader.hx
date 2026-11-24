@@ -104,14 +104,22 @@ class ExtraDropShadowShader extends FlxShader
 		if (attachedSprite != null)
 		{
 			if (attachedSprite.shader == this) attachedSprite.shader = null;
+			#if (flixel >= "5.9.0")
 			attachedSprite.animation.onFrameChange.remove(__attachedSpriteHook);
+			#else
+			attachedSprite.animation.callback = null;
+			#end
 		}
 
 		attachedSprite = sprite;
 
 		if (sprite != null)
 		{
+			#if (flixel >= "5.9.0")
 			sprite.animation.onFrameChange.add(__attachedSpriteHook);
+			#else
+			sprite.animation.callback = __attachedSpriteHook;
+			#end
 			updateFrameInfo(sprite.frame);
 			sprite.shader = this;
 		}
